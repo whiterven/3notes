@@ -189,11 +189,13 @@ export async function findRelatedNotes(currentNote: Note, allNotes: Note[]): Pro
 }
 
 export interface AiResponse {
-    type: 'answer' | 'note';
+    type: 'answer' | 'note' | 'update';
     content: string;
     noteData?: {
-        text: string;
-        tags: string[];
+        id?: string;
+        text?: string;
+        tags?: string[];
+        color?: string;
     };
 }
 
@@ -208,7 +210,7 @@ export async function queryNotes(query: string, allNotes: Note[]): Promise<AiRes
         `.trim();
     }).join('\n---\n');
 
-    const createNoteTool = {
+    const tools = {
         functionDeclarations: [
             {
                 name: "create_note",
@@ -228,13 +230,41 @@ export async function queryNotes(query: string, allNotes: Note[]): Promise<AiRes
                     },
                     required: ["text", "tags"]
                 }
+            },
+            {
+                name: "update_note",
+                description: "Updates an existing note with new text, tags, or color. The AI must infer the noteId from the user's query and the notes context.",
+                parameters: {
+                    type: Type.OBJECT,
+                    properties: {
+                        noteId: {
+                            type: Type.STRING,
+                            description: "The ID of the note to update."
+                        },
+                        text: {
+                            type: Type.STRING,
+                            description: "The new full HTML content for the note. If not provided, the text will not be changed."
+                        },
+                        tags: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING },
+                            description: "An array of new tags. This will replace all existing tags. If not provided, tags will not be changed."
+                        },
+                        color: {
+                            type: Type.STRING,
+                            description: "The new background color class for the note. Available options: 'bg-amber-100', 'bg-sky-100', 'bg-lime-100', 'bg-rose-100', 'bg-violet-100', 'bg-white'."
+                        }
+                    },
+                    required: ["noteId"]
+                }
             }
         ]
     };
 
     const systemInstruction = `You are a helpful AI assistant in a notetaking app.
 - Your primary job is to answer questions based *only* on the provided notes context. Do not use external knowledge. If the answer isn't in the notes, say so. Format your answers using simple markdown.
-- If the user explicitly asks you to create a note (e.g., "make a note about...", "jot down an idea for..."), you MUST use the 'create_note' tool. Do not answer in text. Call the tool.`;
+- If the user explicitly asks you to create a note (e.g., "make a note about...", "jot down an idea for..."), you MUST use the 'create_note' tool. Do not answer in text.
+- If the user asks to modify, change, add to, or update an existing note, you MUST use the 'update_note' tool. You must find the correct noteId from the context. Do not answer in text.`;
 
     try {
         const response = await ai.models.generateContent({
@@ -242,23 +272,41 @@ export async function queryNotes(query: string, allNotes: Note[]): Promise<AiRes
             contents: `User query: "${query}"\n\nNotes context:\n${notesContext}`,
             config: {
                 systemInstruction,
-                tools: [createNoteTool]
+                tools: [tools]
             },
         });
 
         // Check for function call
         const functionCall = response.candidates?.[0]?.content?.parts?.find(part => part.functionCall)?.functionCall;
 
-        if (functionCall && functionCall.name === 'create_note') {
-            const { text, tags } = functionCall.args;
-            return {
-                type: 'note',
-                content: "I've created that note for you.", // Static confirmation message
-                noteData: {
-                    text: (text as string) || '',
-                    tags: (tags as string[]) || [],
-                },
-            };
+        if (functionCall) {
+            if (functionCall.name === 'create_note') {
+                const { text, tags } = functionCall.args;
+                return {
+                    type: 'note',
+                    content: "I've created that note for you.",
+                    noteData: {
+                        text: (text as string) || '',
+                        tags: (tags as string[]) || [],
+                    },
+                };
+            }
+            if (functionCall.name === 'update_note') {
+                const { noteId, text, tags, color } = functionCall.args;
+                 if (!noteId) {
+                    return { type: 'answer', content: "I'm sorry, I couldn't figure out which note to update. Can you be more specific?" };
+                }
+                return {
+                    type: 'update',
+                    content: "I've updated that note for you.",
+                    noteData: {
+                        id: noteId as string,
+                        text: text as string | undefined,
+                        tags: tags as string[] | undefined,
+                        color: color as string | undefined,
+                    },
+                };
+            }
         }
         
         // If no function call, return text response

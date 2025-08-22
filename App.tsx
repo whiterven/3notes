@@ -158,6 +158,23 @@ const App: React.FC = () => {
     setNotes(prevNotes => [...prevNotes, newNote]);
     showToast("AI created a new note for you!", "success");
   };
+  
+  const handleAiUpdateNote = (updateData: { id: string; text?: string; tags?: string[]; color?: string }) => {
+    setNotes(prevNotes =>
+        prevNotes.map(n => {
+            if (n.id === updateData.id) {
+                return {
+                    ...n,
+                    text: updateData.text ?? n.text,
+                    tags: updateData.tags ?? n.tags,
+                    color: updateData.color ?? n.color,
+                };
+            }
+            return n;
+        })
+    );
+    showToast("AI has updated the note!", "success");
+  };
 
   const deleteNote = (id: string) => {
     setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
@@ -341,23 +358,24 @@ const App: React.FC = () => {
   };
 
   const envClass = `env-${environment}`;
+  const isDarkTheme = environment === 'library' || environment === 'scifi';
 
   return (
-    <div className={`min-h-screen w-full text-amber-900 font-handwritten selection:bg-amber-400/50 flex flex-col transition-colors duration-500 ${envClass}`}>
+    <div className={`min-h-screen w-full text-amber-900 font-handwritten selection:bg-amber-400/50 flex flex-col transition-colors duration-500 ${envClass} ${isDarkTheme ? 'dark' : ''}`}>
       <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 z-30 border-b themed-header transition-colors duration-500">
         <div>
           <h1 className="text-3xl sm:text-4xl font-bold text-amber-800">3D AI Notetaker</h1>
           <p className="text-lg sm:text-xl text-amber-600">Capture your ideas in a new dimension.</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <button onClick={() => setIsChatVisible(true)} className="flex items-center text-base sm:text-xl p-2 sm:py-2 sm:px-4 rounded-full transition-colors duration-300 themed-button-violet" title="Ask Your Notes">
+          <button onClick={() => setIsChatVisible(true)} className="flex items-center text-base sm:text-lg p-1.5 sm:py-1.5 sm:px-3 rounded-full transition-colors duration-300 themed-button-violet" title="Ask Your Notes">
             <BrainCircuitIcon className="w-6 h-6" /> <span className="hidden sm:inline ml-2">Ask AI</span>
           </button>
           <EnvironmentSelector currentEnv={environment} onSelect={setEnvironment} />
-          <button onClick={handleExport} className="flex items-center text-base sm:text-xl p-2 sm:py-2 sm:px-4 rounded-full transition-colors duration-300 themed-button" title="Export Notes as JSON">
+          <button onClick={handleExport} className="flex items-center text-base sm:text-lg p-1.5 sm:py-1.5 sm:px-3 rounded-full transition-colors duration-300 themed-button" title="Export Notes as JSON">
             <ExportIcon className="w-6 h-6" /> <span className="hidden sm:inline ml-2">Export</span>
           </button>
-          <button onClick={handleAddNewNote} className="flex items-center gap-2 text-base sm:text-xl bg-amber-700 text-white p-3 sm:py-3 sm:px-5 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
+          <button onClick={handleAddNewNote} className="flex items-center gap-2 text-base sm:text-lg bg-amber-700 text-white p-2.5 sm:py-2.5 sm:px-4 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
             <PlusIcon className="w-6 h-6" /> <span className="hidden sm:inline">New Note</span>
           </button>
         </div>
@@ -500,6 +518,7 @@ const App: React.FC = () => {
             notes={notes}
             onClose={() => setIsChatVisible(false)}
             onNoteCreate={handleAiCreateNote}
+            onNoteUpdate={handleAiUpdateNote}
             showToast={showToast}
           />
       )}

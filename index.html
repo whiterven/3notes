@@ -29,6 +29,13 @@
       .thin-scrollbar::-webkit-scrollbar-thumb:hover {
         background-color: #fcd34d; /* amber-300 */
       }
+      .dark .thin-scrollbar::-webkit-scrollbar-thumb {
+        background-color: #fcd34d; /* amber-300 */
+      }
+      .dark .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+        background-color: #fbbf24; /* amber-400 */
+      }
+
 
       .perspective-1000 {
         perspective: 1000px;
@@ -43,6 +50,9 @@
       }
       .env-gallery {
         background-color: #f3f4f6; /* gray-100 */
+      }
+      .env-library, .env-scifi {
+        color-scheme: dark;
       }
       .env-library {
          background-color: #382e21;
@@ -151,6 +161,48 @@
         background-color: rgba(255, 251, 235, 0.8); /* amber-50/80 */
         border-bottom-color: #fde68a; /* amber-200 */
       }
+      
+      /* THEMED MODALS (NOTE FORM, AI CHAT) */
+      .env-library .themed-modal-bg,
+      .env-scifi .themed-modal-bg {
+        background-color: rgba(31, 41, 55, 0.9); /* gray-800/90 */
+        border-color: #4b5563; /* gray-600 */
+      }
+      .env-library .themed-modal-header,
+      .env-scifi .themed-modal-header {
+        border-bottom-color: #4b5563;
+      }
+      .env-library .themed-modal-text,
+      .env-scifi .themed-modal-text {
+        color: #fde68a; /* amber-200 */
+      }
+       .env-library .themed-modal-text-alt,
+      .env-scifi .themed-modal-text-alt {
+        color: #d1d5db; /* gray-300 */
+      }
+      .env-library .themed-modal-input-bg,
+      .env-scifi .themed-modal-input-bg {
+        background-color: rgba(55, 65, 81, 0.5); /* gray-700/50 */
+        border-color: #4b5563; /* gray-600 */
+      }
+      .env-library .themed-modal-input-bg:focus-within,
+      .env-scifi .themed-modal-input-bg:focus-within {
+        border-color: #fcd34d; /* amber-300 */
+      }
+      .env-library .themed-modal-button,
+      .env-scifi .themed-modal-button {
+        background-color: #4b5563;
+        color: #e5e7eb;
+      }
+       .env-library .themed-modal-button:hover,
+      .env-scifi .themed-modal-button:hover {
+        background-color: #6b7280;
+      }
+      .env-library .themed-modal-button-active,
+      .env-scifi .themed-modal-button-active {
+        background-color: #fcd34d;
+      }
+
 
       /* Custom Audio Player Styles */
       .custom-audio-player {

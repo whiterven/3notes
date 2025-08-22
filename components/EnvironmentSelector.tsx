@@ -27,7 +27,7 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({ curren
         <div className="relative">
             <button
                 onClick={() => setIsOpen(true)}
-                className="flex items-center text-base sm:text-xl p-2 sm:py-2 sm:px-4 rounded-full transition-colors duration-300 themed-button"
+                className="flex items-center text-base sm:text-lg p-1.5 sm:py-1.5 sm:px-3 rounded-full transition-colors duration-300 themed-button"
                 title="Change Environment"
             >
                 <PaletteIcon className="w-6 h-6" />

@@ -7,6 +7,7 @@ interface AiChatAssistantProps {
     notes: Note[];
     onClose: () => void;
     onNoteCreate: (noteData: { text: string; tags: string[] }) => void;
+    onNoteUpdate: (noteData: { id: string; text?: string; tags?: string[]; color?: string }) => void;
     showToast: (message: string, type?: ToastType) => void;
 }
 
@@ -42,9 +43,9 @@ const markdownToHtml = (text: string) => {
     return html;
 };
 
-export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose, onNoteCreate, showToast }) => {
+export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose, onNoteCreate, onNoteUpdate, showToast }) => {
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'ai', content: "Hello! Ask me anything about your notes. You can also ask me to create a new note for you." }
+        { role: 'ai', content: "Hello! Ask me anything about your notes. You can also ask me to create a new note for you or update an existing one." }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -69,7 +70,9 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
             setMessages(prev => [...prev, aiMessage]);
 
             if (aiResponse.type === 'note' && aiResponse.noteData) {
-                onNoteCreate(aiResponse.noteData);
+                onNoteCreate(aiResponse.noteData as { text: string; tags: string[] });
+            } else if (aiResponse.type === 'update' && aiResponse.noteData?.id) {
+                onNoteUpdate(aiResponse.noteData as { id: string; text?: string; tags?: string[]; color?: string });
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
@@ -83,14 +86,14 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" aria-modal="true">
-            <div className="bg-amber-50/95 w-full max-w-3xl h-[90vh] rounded-2xl shadow-2xl flex flex-col border border-amber-200">
-                <header className="flex justify-between items-center p-4 border-b border-amber-200">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4" aria-modal="true">
+            <div className="bg-amber-50/95 w-full max-w-3xl h-[90vh] rounded-2xl shadow-2xl flex flex-col border border-amber-200 themed-modal-bg">
+                <header className="flex justify-between items-center p-4 border-b border-amber-200 themed-modal-header">
                     <div className="flex items-center gap-3">
                         <BrainCircuitIcon className="w-8 h-8 text-violet-700" />
-                        <h2 className="text-2xl sm:text-3xl text-amber-800">Ask Your Notes</h2>
+                        <h2 className="text-2xl sm:text-3xl text-amber-800 themed-modal-text">Ask Your Notes</h2>
                     </div>
-                    <button onClick={onClose} className="text-amber-600 hover:text-amber-900" aria-label="Close chat">
+                    <button onClick={onClose} className="text-amber-600 hover:text-amber-900 themed-modal-text" aria-label="Close chat">
                         <CloseIcon className="w-7 h-7" />
                     </button>
                 </header>
@@ -99,7 +102,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex gap-3 text-xl sm:text-2xl ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'ai' && <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><BrainCircuitIcon className="w-6 h-6 text-violet-700" /></div>}
-                            <div className={`max-w-xl p-4 rounded-2xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none'} [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mb-1`}>
+                            <div className={`max-w-xl p-4 rounded-2xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200'} [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mb-1`}>
                                 {msg.role === 'user' ? (
                                     <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
                                 ) : (
@@ -111,7 +114,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                     {isLoading && (
                          <div className="flex gap-3 text-xl sm:text-2xl justify-start">
                              <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><LoaderIcon className="w-6 h-6 text-violet-700 animate-spin" /></div>
-                             <div className="max-w-xl p-4 rounded-2xl bg-white text-amber-800 rounded-bl-none">
+                             <div className="max-w-xl p-4 rounded-2xl bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200">
                                  <p className="italic">Thinking...</p>
                              </div>
                          </div>
@@ -119,14 +122,14 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                     <div ref={messagesEndRef} />
                 </div>
                 
-                <form onSubmit={handleSend} className="p-4 border-t border-amber-200">
+                <form onSubmit={handleSend} className="p-4 border-t border-amber-200 themed-modal-header">
                     <div className="relative">
                         <input
                             type="text"
                             value={input}
                             onChange={e => setInput(e.target.value)}
                             placeholder="Ask about your notes... or ask me to create one."
-                            className="w-full text-xl sm:text-2xl p-4 pr-16 bg-white rounded-full border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300"
+                            className="w-full text-xl sm:text-2xl p-4 pr-16 bg-white rounded-full border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300 themed-modal-input-bg themed-modal-text"
                             disabled={isLoading}
                         />
                         <button type="submit" disabled={isLoading || !input.trim()} className="absolute right-3 top-1/2 -translate-y-1/2 bg-amber-600 text-white rounded-full p-3 hover:bg-amber-700 transition disabled:bg-amber-300 disabled:cursor-not-allowed">

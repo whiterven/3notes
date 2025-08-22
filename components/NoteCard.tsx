@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import type { Note } from '../types';
-import { CloseIcon, LoaderIcon, SparklesIcon, EditIcon, TranscribeIcon, ClipboardListIcon, LinkIcon, LayersIcon } from './icons';
+import { CloseIcon, LoaderIcon, SparklesIcon, EditIcon, TranscribeIcon, ClipboardListIcon, LinkIcon, LayersIcon, WandIcon } from './icons';
 
 interface NoteCardProps {
   note: Note;
@@ -13,6 +13,7 @@ interface NoteCardProps {
   onTextUpdate: (id: string, newText: string) => void;
   onFindTasks: (id: string) => void;
   onFindRelatedNotes: (id: string) => void;
+  onExpand: (id: string) => void;
   onNavigateToNote: (id: string) => void;
   onStartStack: (id: string) => void;
   onFinishStack: (id: string) => void;
@@ -20,6 +21,7 @@ interface NoteCardProps {
   isTranscribing: boolean;
   isExtractingTasks: boolean;
   isFindingLinks: boolean;
+  isExpanding: boolean;
   stackingNoteId: string | null;
   stackCount: number;
 }
@@ -35,6 +37,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     onTextUpdate, 
     onFindTasks,
     onFindRelatedNotes,
+    onExpand,
     onNavigateToNote,
     onStartStack,
     onFinishStack,
@@ -42,6 +45,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     isTranscribing,
     isExtractingTasks,
     isFindingLinks,
+    isExpanding,
     stackingNoteId,
     stackCount,
 }) => {
@@ -179,55 +183,66 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         </div>
 
         <div className={`mt-auto flex flex-col gap-2 pt-2 ${isStacking ? 'opacity-20' : ''}`}>
-            <div className="grid grid-cols-2 gap-2">
-                {note.audioUrl && (
-                    <button
-                        onClick={() => onTranscribe(note.id)}
-                        disabled={isTranscribing || isStacking}
-                        className="bg-sky-400/50 text-sky-800 w-full py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 hover:bg-sky-400 transition duration-200 disabled:bg-sky-200 col-span-2"
-                        aria-label="Transcribe audio to text with AI"
-                    >
-                        {isTranscribing ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> Transcribing...</> ) 
-                        : ( <><TranscribeIcon className="w-5 h-5" /> Transcribe</> )}
-                    </button>
-                )}
+            {note.audioUrl && (
+                <button
+                    onClick={() => onTranscribe(note.id)}
+                    disabled={isTranscribing || isStacking}
+                    className="bg-sky-400/50 text-sky-800 w-full py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 hover:bg-sky-400 transition duration-200 disabled:bg-sky-200"
+                    aria-label="Transcribe audio to text with AI"
+                >
+                    {isTranscribing ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> Transcribing...</> ) 
+                    : ( <><TranscribeIcon className="w-5 h-5" /> Transcribe</> )}
+                </button>
+            )}
+            <div className="flex flex-wrap gap-2">
                 {noteHasText && !note.summary && (
                     <button
                         onClick={() => onSummarize(note.id)}
                         disabled={isSummarizing || isStacking}
-                        className="bg-amber-400/50 text-amber-800 w-full py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition duration-200 disabled:bg-amber-200"
+                        className="flex-1 min-w-[120px] bg-amber-400/50 text-amber-800 py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition duration-200 disabled:bg-amber-200"
                         aria-label="Summarize note with AI"
                     >
-                        {isSummarizing ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> Summarizing...</> ) 
-                        : ( <><SparklesIcon className="w-5 h-5" /> Summarize</> )}
+                        {isSummarizing ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> ...</> ) 
+                        : ( <><SparklesIcon className="w-5 h-5" /> Sum'ize</> )}
+                    </button>
+                )}
+                 {noteHasText && (
+                    <button
+                        onClick={() => onExpand(note.id)}
+                        disabled={isExpanding || isStacking}
+                        className="flex-1 min-w-[120px] bg-rose-400/50 text-rose-800 py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 hover:bg-rose-400 transition duration-200 disabled:bg-rose-200"
+                        aria-label="Expand note with AI"
+                    >
+                        {isExpanding ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> ...</> ) 
+                        : ( <><WandIcon className="w-5 h-5" /> Expand</> )}
                     </button>
                 )}
                  {noteHasText && (
                     <button
                         onClick={() => onFindTasks(note.id)}
                         disabled={isExtractingTasks || isStacking}
-                        className="bg-sky-400/50 text-sky-800 w-full py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 hover:bg-sky-400 transition duration-200 disabled:bg-sky-200"
+                        className="flex-1 min-w-[120px] bg-sky-400/50 text-sky-800 py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 hover:bg-sky-400 transition duration-200 disabled:bg-sky-200"
                         aria-label="Find tasks in note with AI"
                     >
-                        {isExtractingTasks ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> Finding...</> ) 
-                        : ( <><ClipboardListIcon className="w-5 h-5" /> Find Tasks</> )}
+                        {isExtractingTasks ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> ...</> ) 
+                        : ( <><ClipboardListIcon className="w-5 h-5" /> Tasks</> )}
                     </button>
                 )}
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-wrap gap-2">
                  <button
                     onClick={() => onFindRelatedNotes(note.id)}
                     disabled={isFindingLinks || isStacking}
-                    className="bg-violet-400/50 text-violet-800 w-full py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 hover:bg-violet-400 transition duration-200 disabled:bg-violet-200"
+                    className="flex-1 min-w-[120px] bg-violet-400/50 text-violet-800 py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 hover:bg-violet-400 transition duration-200 disabled:bg-violet-200"
                     aria-label="Find related notes with AI"
                 >
-                    {isFindingLinks ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> Finding...</> ) 
-                    : ( <><LinkIcon className="w-5 h-5" /> Find Related</> )}
+                    {isFindingLinks ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> ...</> ) 
+                    : ( <><LinkIcon className="w-5 h-5" /> Related</> )}
                 </button>
                 <button
                     onClick={() => onStartStack(note.id)}
                     disabled={isStacking}
-                    className={`w-full py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 transition duration-200 ${
+                    className={`flex-1 min-w-[120px] py-1.5 sm:py-2 rounded-lg text-base sm:text-lg flex items-center justify-center gap-2 transition duration-200 ${
                         isThisNoteStackingSource
                           ? 'bg-amber-600 text-white animate-pulse'
                           : 'bg-gray-400/50 text-gray-800 hover:bg-gray-400 disabled:bg-gray-200'

@@ -6,8 +6,9 @@ import { Toast } from './components/Toast';
 import { AiChatAssistant } from './components/AiChatAssistant';
 import { EnvironmentSelector } from './components/EnvironmentSelector';
 import type { Environment } from './components/EnvironmentSelector';
-import { summarizeText, transcribeAudio, extractTasks, findRelatedNotes } from './services/geminiService';
-import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon } from './components/icons';
+import { summarizeText, transcribeAudio, extractTasks, findRelatedNotes, expandNoteText } from './services/geminiService';
+import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon, TrendingUpIcon } from './components/icons';
+import { InsightsModal } from './components/InsightsModal';
 
 const LOCAL_STORAGE_KEY = 'ai-3d-notes';
 const ENV_STORAGE_KEY = 'ai-3d-notes-env';
@@ -55,8 +56,10 @@ const App: React.FC = () => {
   const [isTranscribing, setIsTranscribing] = useState<string | null>(null);
   const [isExtractingTasks, setIsExtractingTasks] = useState<string | null>(null);
   const [isFindingLinks, setIsFindingLinks] = useState<string | null>(null);
+  const [isExpandingNote, setIsExpandingNote] = useState<string | null>(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isChatVisible, setIsChatVisible] = useState(false);
+  const [isInsightsVisible, setIsInsightsVisible] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -288,6 +291,28 @@ const App: React.FC = () => {
           setIsFindingLinks(null);
       }
   };
+
+  const handleExpandNote = async (id: string) => {
+    const note = notes.find(n => n.id === id);
+    if (!note || !note.text) {
+        showToast("Note has no text to expand.");
+        return;
+    }
+    setIsExpandingNote(id);
+    try {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = note.text;
+        const plainText = tempDiv.textContent || tempDiv.innerText || "";
+        const expandedText = await expandNoteText(plainText);
+        setNotes(prev => prev.map(n => n.id === id ? { ...n, text: `${n.text}<hr class="my-4 border-amber-300"><h3 class="text-xl font-bold text-amber-800">AI Expansion:</h3>${expandedText}` } : n));
+        showToast("Note expanded!", "success");
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        showToast(`Could not expand note. ${errorMessage}`);
+    } finally {
+        setIsExpandingNote(null);
+    }
+  };
   
   const handleNavigateToNote = (id: string) => {
       const noteIndex = carouselNotes.findIndex(n => n.id === id);
@@ -368,6 +393,9 @@ const App: React.FC = () => {
           <p className="text-lg sm:text-xl text-amber-600">Capture your ideas in a new dimension.</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
+           <button onClick={() => setIsInsightsVisible(true)} className="flex items-center text-base sm:text-lg p-1.5 sm:py-1.5 sm:px-3 rounded-full transition-colors duration-300 themed-button-violet" title="Get AI Insights">
+            <TrendingUpIcon className="w-6 h-6" /> <span className="hidden sm:inline ml-2">Insights</span>
+          </button>
           <button onClick={() => setIsChatVisible(true)} className="flex items-center text-base sm:text-lg p-1.5 sm:py-1.5 sm:px-3 rounded-full transition-colors duration-300 themed-button-violet" title="Ask Your Notes">
             <BrainCircuitIcon className="w-6 h-6" /> <span className="hidden sm:inline ml-2">Ask AI</span>
           </button>
@@ -462,6 +490,7 @@ const App: React.FC = () => {
                                     onTextUpdate={handleTextUpdate}
                                     onFindTasks={() => handleFindTasks(note.id)}
                                     onFindRelatedNotes={() => handleFindRelatedNotes(note.id)}
+                                    onExpand={() => handleExpandNote(note.id)}
                                     onNavigateToNote={handleNavigateToNote}
                                     onStartStack={handleStartStack}
                                     onFinishStack={handleFinishStack}
@@ -469,6 +498,7 @@ const App: React.FC = () => {
                                     isTranscribing={isTranscribing === note.id}
                                     isExtractingTasks={isExtractingTasks === note.id}
                                     isFindingLinks={isFindingLinks === note.id}
+                                    isExpanding={isExpandingNote === note.id}
                                     stackingNoteId={stackingNoteId}
                                     stackCount={stackedNotes.length}
                                 />
@@ -520,6 +550,14 @@ const App: React.FC = () => {
             onNoteCreate={handleAiCreateNote}
             onNoteUpdate={handleAiUpdateNote}
             showToast={showToast}
+          />
+      )}
+
+      {isInsightsVisible && (
+          <InsightsModal
+              notes={notes}
+              onClose={() => setIsInsightsVisible(false)}
+              showToast={showToast}
           />
       )}
 

@@ -188,6 +188,54 @@ export async function findRelatedNotes(currentNote: Note, allNotes: Note[]): Pro
     }
 }
 
+export async function expandNoteText(text: string): Promise<string> {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `The following is a user's note. Expand on this idea, adding more details, potential features, target audiences, or related concepts. Format the output as clean HTML using <p>, <ul>, <li>, <strong>, and <em> tags. Do not include <html> or <body> tags. Note: "${text}"`,
+            config: {
+                temperature: 0.7,
+            }
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Error expanding note text:", error);
+        throw new Error("Failed to connect with the AI for note expansion.");
+    }
+}
+
+export async function generateInsights(allNotes: Note[]): Promise<string> {
+    const notesContext = allNotes.map(note => {
+        const textContent = (note.text || "").replace(/<[^>]*>?/gm, ' ').substring(0, 500);
+        return `
+            Note (Tags: [${(note.tags || []).join(', ')}]):
+            ${textContent}
+            ${note.summary ? `Summary: ${note.summary}` : ''}
+        `.trim();
+    }).join('\n---\n');
+
+    if (notesContext.trim().length === 0) {
+        return "There are no notes to analyze yet. Start writing to discover insights!";
+    }
+
+    const prompt = `As an AI analyst, review the following collection of notes. Identify emerging themes, surprising connections between different notes, and potential action items that span across multiple ideas. Present your findings as a concise summary. Use markdown for formatting (e.g., headings, bold text, bullet points). \n\nNotes:\n${notesContext}`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+             config: {
+                temperature: 0.5,
+            }
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Error generating insights:", error);
+        throw new Error("Failed to connect with the AI to generate insights.");
+    }
+}
+
+
 export interface AiResponse {
     type: 'answer' | 'note' | 'update';
     content: string;
@@ -197,9 +245,32 @@ export interface AiResponse {
         tags?: string[];
         color?: string;
     };
+    groundingMetadata?: any;
 }
 
-export async function queryNotes(query: string, allNotes: Note[]): Promise<AiResponse> {
+export async function queryNotes(query: string, allNotes: Note[], useWebSearch: boolean): Promise<AiResponse> {
+     if (useWebSearch) {
+        try {
+            const response = await ai.models.generateContent({
+               model: "gemini-2.5-flash",
+               contents: `First, review the following notes context to see if you can answer the user's query. If the answer is not in the notes, use your search tool to find a relevant, up-to-date answer. \n\nUSER QUERY: "${query}"\n\nNOTES CONTEXT:\n${allNotes.map(n => n.text.replace(/<[^>]*>?/gm, ' ')).join('\n---\n')}`,
+               config: {
+                 tools: [{googleSearch: {}}],
+               },
+            });
+
+            return {
+                type: 'answer',
+                content: response.text,
+                groundingMetadata: response.candidates?.[0]?.groundingMetadata?.groundingChunks || null,
+            };
+
+        } catch (error) {
+            console.error("Error querying with web search:", error);
+            throw new Error("Failed to get a response from the AI assistant with web search.");
+        }
+    }
+
     const notesContext = allNotes.map(note => {
         const textContent = (note.text || "").replace(/<[^>]*>?/gm, ' ').substring(0, 500);
         return `

@@ -7,6 +7,8 @@ export interface Note {
   summary: string | null;
   color: string;
   tags: string[];
+  tasks: string[] | null;
+  relatedNoteIds: string[] | null;
 }
 
 export type ToastType = 'error' | 'success';

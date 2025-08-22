@@ -1,6 +1,5 @@
-
-
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
+import type { Note } from '../types';
 
 const API_KEY = process.env.API_KEY;
 
@@ -107,5 +106,110 @@ export async function transcribeAudio(audioUrl: string): Promise<string> {
     } catch (error) {
         console.error("Error transcribing audio:", error);
         throw new Error("Failed to connect with the AI for transcription.");
+    }
+}
+
+
+export async function extractTasks(text: string): Promise<string[]> {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Analyze the following note and extract any action items or tasks. If there are no tasks, return an empty array. Note: "${text}"`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        tasks: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        }
+                    },
+                    required: ["tasks"]
+                }
+            }
+        });
+        const result = JSON.parse(response.text);
+        return result.tasks || [];
+    } catch (error) {
+        console.error("Error extracting tasks:", error);
+        throw new Error("Failed to connect with the AI for task extraction.");
+    }
+}
+
+export async function findRelatedNotes(currentNote: Note, allNotes: Note[]): Promise<string[]> {
+    const otherNotes = allNotes
+        .filter(n => n.id !== currentNote.id)
+        .map(n => ({ 
+            id: n.id, 
+            text: (n.text || "").replace(/<[^>]*>?/gm, ' ').substring(0, 200), // snippet of plain text
+            tags: n.tags, 
+            summary: n.summary 
+        }));
+
+    if (otherNotes.length === 0) return [];
+    
+    const context = `
+        Current Note (ID: ${currentNote.id}):
+        Text: ${(currentNote.text || "").replace(/<[^>]*>?/gm, ' ')}
+        Tags: ${(currentNote.tags || []).join(', ')}
+        Summary: ${currentNote.summary || 'N/A'}
+
+        List of other notes:
+        ${JSON.stringify(otherNotes)}
+
+        Based on the content of the "Current Note", find up to 3 most relevant notes from the "List of other notes".
+        Return only the IDs of the related notes.
+    `;
+    
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: context,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        relatedNoteIds: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        }
+                    },
+                    required: ["relatedNoteIds"]
+                }
+            }
+        });
+        const result = JSON.parse(response.text);
+        return result.relatedNoteIds || [];
+    } catch (error) {
+        console.error("Error finding related notes:", error);
+        throw new Error("Failed to connect with the AI to find related notes.");
+    }
+}
+
+export async function queryNotes(query: string, allNotes: Note[]): Promise<string> {
+    const notesContext = allNotes.map(note => {
+        const textContent = (note.text || "").replace(/<[^>]*>?/gm, ' ').substring(0, 500);
+        return `
+            Note ID: ${note.id}
+            Tags: [${(note.tags || []).join(', ')}]
+            Content: ${textContent}
+            ${note.summary ? `AI Summary: ${note.summary}` : ''}
+        `.trim();
+    }).join('\n---\n');
+
+    const systemInstruction = `You are a helpful AI assistant integrated into a notetaking app. Your task is to answer the user's questions based *only* on the provided notes context. Do not use any external knowledge. If the answer cannot be found in the notes, state that clearly. Here is the context of all the user's notes:\n\n${notesContext}`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: query,
+            config: { systemInstruction }
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Error querying notes:", error);
+        throw new Error("Failed to get a response from the AI assistant.");
     }
 }

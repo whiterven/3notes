@@ -3,8 +3,9 @@ import type { Note, ToastMessage, ToastType } from './types';
 import { AddNoteForm } from './components/AddNoteForm';
 import { NoteCard } from './components/NoteCard';
 import { Toast } from './components/Toast';
-import { summarizeText, transcribeAudio } from './services/geminiService';
-import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon } from './components/icons';
+import { AiChatAssistant } from './components/AiChatAssistant';
+import { summarizeText, transcribeAudio, extractTasks, findRelatedNotes } from './services/geminiService';
+import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon } from './components/icons';
 
 const LOCAL_STORAGE_KEY = 'ai-3d-notes';
 
@@ -14,8 +15,14 @@ const getInitialNotes = (): Note[] => {
         if (savedNotes) {
             const parsedNotes = JSON.parse(savedNotes);
             if (Array.isArray(parsedNotes)) {
-                // Add default tags/drawing array to old notes for backwards compatibility
-                return parsedNotes.map(note => ({ ...note, tags: note.tags || [], drawingUrl: note.drawingUrl || null }));
+                // Add default fields to old notes for backwards compatibility
+                return parsedNotes.map(note => ({ 
+                    ...note, 
+                    tags: note.tags || [], 
+                    drawingUrl: note.drawingUrl || null,
+                    tasks: note.tasks || null,
+                    relatedNoteIds: note.relatedNoteIds || null,
+                }));
             }
         }
     } catch (error) {
@@ -28,7 +35,10 @@ const App: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>(getInitialNotes);
   const [isLoadingSummary, setIsLoadingSummary] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState<string | null>(null);
+  const [isExtractingTasks, setIsExtractingTasks] = useState<string | null>(null);
+  const [isFindingLinks, setIsFindingLinks] = useState<string | null>(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,7 +89,7 @@ const App: React.FC = () => {
     setToast({ message, type });
   };
 
-  const handleSaveNote = (noteData: Omit<Note, 'id' | 'summary'>, id?: string) => {
+  const handleSaveNote = (noteData: Omit<Note, 'id' | 'summary' | 'tasks' | 'relatedNoteIds'>, id?: string) => {
     if (id) {
         setNotes(prevNotes => 
             prevNotes.map(n => (n.id === id ? { ...n, ...noteData, tags: noteData.tags || [] } : n))
@@ -90,6 +100,8 @@ const App: React.FC = () => {
             id: `note-${Date.now()}`,
             summary: null,
             tags: noteData.tags || [],
+            tasks: null,
+            relatedNoteIds: null,
         };
         setNotes(prevNotes => [...prevNotes, newNote]);
     }
@@ -123,7 +135,6 @@ const App: React.FC = () => {
 
     setIsLoadingSummary(id);
     try {
-        // Create a temporary div to strip HTML tags for the summary
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = noteToSummarize.text;
         const plainText = tempDiv.textContent || tempDiv.innerText || "";
@@ -163,6 +174,61 @@ const App: React.FC = () => {
     } finally {
         setIsTranscribing(null);
     }
+  };
+
+  const handleFindTasks = async (id: string) => {
+    const note = notes.find(n => n.id === id);
+    if (!note || !note.text) {
+        showToast("Note has no text to analyze for tasks.");
+        return;
+    }
+    setIsExtractingTasks(id);
+    try {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = note.text;
+        const plainText = tempDiv.textContent || tempDiv.innerText || "";
+        const tasks = await extractTasks(plainText);
+        setNotes(prev => prev.map(n => n.id === id ? { ...n, tasks } : n));
+        if (tasks.length > 0) {
+            showToast("Tasks found!", "success");
+        } else {
+            showToast("No tasks found in this note.", "success");
+        }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        showToast(`Could not find tasks. ${errorMessage}`);
+    } finally {
+        setIsExtractingTasks(null);
+    }
+  };
+  
+  const handleFindRelatedNotes = async (id: string) => {
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+      setIsFindingLinks(id);
+      try {
+          const relatedNoteIds = await findRelatedNotes(note, notes);
+          setNotes(prev => prev.map(n => n.id === id ? { ...n, relatedNoteIds } : n));
+          if (relatedNoteIds.length > 0) {
+              showToast("Related notes found!", "success");
+          } else {
+              showToast("No related notes found.", "success");
+          }
+      } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+          showToast(`Could not find related notes. ${errorMessage}`);
+      } finally {
+          setIsFindingLinks(null);
+      }
+  };
+  
+  const handleNavigateToNote = (id: string) => {
+      const noteIndex = filteredNotes.findIndex(n => n.id === id);
+      if (noteIndex !== -1) {
+          setActiveIndex(noteIndex);
+      } else {
+          showToast("Could not find the selected note. It might be filtered out.");
+      }
   };
   
   const handleExport = () => {
@@ -221,7 +287,10 @@ const App: React.FC = () => {
           <h1 className="text-4xl sm:text-5xl font-bold text-amber-800">3D AI Notetaker</h1>
           <p className="text-xl sm:text-2xl text-amber-600">Capture your ideas in a new dimension.</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <button onClick={() => setIsChatVisible(true)} className="hidden sm:flex items-center gap-2 text-xl bg-violet-200 text-violet-800 py-2 px-5 rounded-full hover:bg-violet-300 transition-colors duration-300" title="Ask Your Notes">
+            <BrainCircuitIcon className="w-6 h-6" /> Ask AI
+          </button>
           <button onClick={handleExport} className="hidden sm:flex items-center gap-2 text-xl bg-amber-200 text-amber-800 py-2 px-5 rounded-full hover:bg-amber-300 transition-colors duration-300" title="Export Notes as JSON">
             <ExportIcon className="w-6 h-6" /> Export
           </button>
@@ -267,12 +336,16 @@ const App: React.FC = () => {
             <div className="relative w-full h-[550px] flex items-center justify-center overflow-hidden">
                 <div className="relative w-full max-w-sm h-[400px] transform-style-preserve-3d perspective-1000">
                     {filteredNotes.map((note, index) => {
-                         const offset = index - activeIndex;
-                         const isVisible = Math.abs(offset) <= 2; // Show active, and 2 on each side
-                         const transform = `rotateY(${offset * -25}deg) scale(${1 - Math.abs(offset) * 0.2}) translateX(${offset * 40}%) translateZ(${Math.abs(offset) * -150}px)`;
-                         const opacity = isVisible ? 1 : 0;
-                         const zIndex = 100 - Math.abs(offset);
-                         const pointerEvents = offset === 0 ? 'auto' : 'none';
+                        const offset = index - activeIndex;
+                        const isVisible = Math.abs(offset) <= 2; // Show active, and 2 on each side
+                        const transform = `rotateY(${offset * -25}deg) scale(${1 - Math.abs(offset) * 0.2}) translateX(${offset * 40}%) translateZ(${Math.abs(offset) * -150}px)`;
+                        const opacity = isVisible ? 1 : 0;
+                        const zIndex = 100 - Math.abs(offset);
+                        const pointerEvents = offset === 0 ? 'auto' : 'none';
+
+                        const relatedNotes = (note.relatedNoteIds || [])
+                            .map(id => notes.find(n => n.id === id))
+                            .filter((n): n is Note => !!n);
 
                         return (
                             <div
@@ -282,14 +355,20 @@ const App: React.FC = () => {
                             >
                                 <NoteCard
                                     note={note}
+                                    relatedNotes={relatedNotes}
                                     onDelete={() => deleteNote(note.id)}
                                     onEdit={() => handleEditNote(note.id)}
                                     onSummarize={() => handleSummarize(note.id)}
                                     onTranscribe={() => handleTranscribe(note.id)}
                                     onTagClick={handleTagClick}
                                     onTextUpdate={handleTextUpdate}
+                                    onFindTasks={() => handleFindTasks(note.id)}
+                                    onFindRelatedNotes={() => handleFindRelatedNotes(note.id)}
+                                    onNavigateToNote={handleNavigateToNote}
                                     isSummarizing={isLoadingSummary === note.id}
                                     isTranscribing={isTranscribing === note.id}
+                                    isExtractingTasks={isExtractingTasks === note.id}
+                                    isFindingLinks={isFindingLinks === note.id}
                                 />
                             </div>
                         )
@@ -330,6 +409,14 @@ const App: React.FC = () => {
           noteToEdit={editingNote}
           showToast={showToast}
         />
+      )}
+
+      {isChatVisible && (
+          <AiChatAssistant
+            notes={notes}
+            onClose={() => setIsChatVisible(false)}
+            showToast={showToast}
+          />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

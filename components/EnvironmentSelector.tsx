@@ -27,11 +27,11 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({ curren
         <div className="relative">
             <button
                 onClick={() => setIsOpen(true)}
-                className="hidden sm:flex items-center gap-2 text-xl bg-amber-200 text-amber-800 py-2 px-5 rounded-full hover:bg-amber-300 transition-colors duration-300"
+                className="flex items-center text-base sm:text-xl p-2 sm:py-2 sm:px-4 rounded-full transition-colors duration-300 themed-button"
                 title="Change Environment"
             >
                 <PaletteIcon className="w-6 h-6" />
-                <span className="hidden lg:inline">Environments</span>
+                <span className="hidden sm:inline ml-2">Environments</span>
             </button>
 
             {isOpen && (

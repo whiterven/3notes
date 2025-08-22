@@ -220,7 +220,7 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 flex items-center justify-center p-4" aria-modal="true">
-        <form onSubmit={handleSubmit} className="relative bg-white/90 shadow-2xl rounded-2xl p-4 sm:p-6 w-full max-w-2xl border border-amber-200 space-y-4 animate-fade-in-up">
+        <form onSubmit={handleSubmit} className="relative bg-white/90 shadow-2xl rounded-2xl p-4 sm:p-6 w-full max-w-2xl border border-amber-200 space-y-4 animate-fade-in-up max-h-[90vh] overflow-y-auto thin-scrollbar">
           <button type="button" onClick={onClose} className="absolute top-3 right-3 text-amber-600 hover:text-amber-900 z-10" aria-label="Close form">
             <CloseIcon className="w-7 h-7" />
           </button>
@@ -238,7 +238,7 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
             ref={editorRef}
             contentEditable
             suppressContentEditableWarning
-            className="w-full bg-transparent border-b-2 border-amber-300 focus:border-amber-500 text-2xl sm:text-3xl p-2 min-h-[250px] resize-y overflow-y-auto transition duration-300 focus:outline-none placeholder-amber-500 [&_ul]:list-disc [&_ul]:pl-8 [&_.checklist-item]:flex [&_.checklist-item]:items-center [&_.checklist-item]:gap-2 [&_.checklist-item_input]:w-5 [&_.checklist-item_input]:h-5 [&_.checklist-item_input]:accent-amber-600 thin-scrollbar"
+            className="w-full bg-transparent border-b-2 border-amber-300 focus:border-amber-500 text-xl sm:text-2xl p-2 min-h-[250px] resize-y overflow-y-auto transition duration-300 focus:outline-none placeholder-amber-500 [&_ul]:list-disc [&_ul]:pl-8 [&_.checklist-item]:flex [&_.checklist-item]:items-center [&_.checklist-item]:gap-2 [&_.checklist-item_input]:w-5 [&_.checklist-item_input]:h-5 [&_.checklist-item_input]:accent-amber-600 thin-scrollbar"
             data-placeholder="Jot down an idea..."
           />
           
@@ -253,7 +253,7 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
 
           {showImageGenerator && (
             <div className="flex flex-col sm:flex-row gap-2">
-              <input type="text" value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} placeholder="Describe an image..." className="flex-grow bg-amber-50 border-2 border-amber-200 rounded-lg p-2 text-lg sm:text-xl focus:outline-none focus:border-amber-400 transition" />
+              <input type="text" value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} placeholder="Describe an image..." className="flex-grow bg-amber-50 border-2 border-amber-200 rounded-lg p-2 text-base sm:text-lg focus:outline-none focus:border-amber-400 transition" />
               <button type="button" onClick={handleSuggestPrompt} disabled={isSuggestingPrompt || !editorRef.current?.textContent} className="bg-amber-400 text-white p-2 rounded-lg text-lg sm:text-xl hover:bg-amber-500 transition duration-200 disabled:bg-amber-300 flex items-center justify-center" title="Suggest prompt from note text">
                 {isSuggestingPrompt ? <LoaderIcon className="w-6 h-6 animate-spin" /> : <LightbulbIcon className="w-6 h-6" />}
               </button>
@@ -275,7 +275,7 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
                           <button type="button" onClick={() => removeTag(index)} className="text-white/80 hover:text-white" aria-label={`Remove ${tag} tag`}><CloseIcon className="w-4 h-4" /></button>
                       </div>
                   ))}
-                  <input id="tags-input" type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleTagInputKeyDown} placeholder="Add tags (press Enter)..." className="flex-grow bg-transparent text-lg sm:text-xl focus:outline-none p-1" />
+                  <input id="tags-input" type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleTagInputKeyDown} placeholder="Add tags (Enter)..." className="flex-grow bg-transparent text-base sm:text-lg focus:outline-none p-1" />
               </div>
           </div>
 
@@ -291,8 +291,8 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
                 <button type="button" onClick={() => {setShowAudioRecorder(s => !s); setShowImageGenerator(false)}} className={`p-3 rounded-full transition duration-200 ${showAudioRecorder ? 'bg-amber-300' : 'bg-amber-100 hover:bg-amber-200'}`} title="Record Audio" aria-label="Record Audio"><MicIcon className="w-6 h-6 text-amber-700"/></button>
             </div>
             <div className="flex items-center gap-4">
-                <button type="button" onClick={onClose} className="text-amber-700 text-lg sm:text-xl font-bold py-2 px-4 sm:py-3 sm:px-5 rounded-full hover:bg-amber-100 transition duration-300">Cancel</button>
-                <button type="submit" className="flex items-center gap-2 bg-amber-700 text-white text-lg sm:text-xl font-bold py-2 px-4 sm:py-3 sm:px-5 rounded-full hover:bg-amber-800 transition duration-300 transform hover:scale-105 shadow-lg">
+                <button type="button" onClick={onClose} className="text-amber-700 text-base sm:text-lg font-bold py-2 px-4 sm:py-2 sm:px-5 rounded-full hover:bg-amber-100 transition duration-300">Cancel</button>
+                <button type="submit" className="flex items-center gap-2 bg-amber-700 text-white text-base sm:text-lg font-bold py-2 px-4 sm:py-2 sm:px-5 rounded-full hover:bg-amber-800 transition duration-300 transform hover:scale-105 shadow-lg">
                   <PlusIcon className="w-6 h-6" /> {noteToEdit ? 'Save Note' : 'Add Note'}
                 </button>
             </div>

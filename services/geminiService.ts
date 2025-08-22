@@ -188,7 +188,16 @@ export async function findRelatedNotes(currentNote: Note, allNotes: Note[]): Pro
     }
 }
 
-export async function queryNotes(query: string, allNotes: Note[]): Promise<string> {
+export interface AiResponse {
+    type: 'answer' | 'note';
+    content: string;
+    noteData?: {
+        text: string;
+        tags: string[];
+    };
+}
+
+export async function queryNotes(query: string, allNotes: Note[]): Promise<AiResponse> {
     const notesContext = allNotes.map(note => {
         const textContent = (note.text || "").replace(/<[^>]*>?/gm, ' ').substring(0, 500);
         return `
@@ -199,15 +208,64 @@ export async function queryNotes(query: string, allNotes: Note[]): Promise<strin
         `.trim();
     }).join('\n---\n');
 
-    const systemInstruction = `You are a helpful AI assistant integrated into a notetaking app. Your task is to answer the user's questions based *only* on the provided notes context. Do not use any external knowledge. If the answer cannot be found in the notes, state that clearly. Format your response using simple markdown (bold, italics, and unordered lists) for better readability. Here is the context of all the user's notes:\n\n${notesContext}`;
+    const createNoteTool = {
+        functionDeclarations: [
+            {
+                name: "create_note",
+                description: "Creates a new note with the given text content and tags.",
+                parameters: {
+                    type: Type.OBJECT,
+                    properties: {
+                        text: {
+                            type: Type.STRING,
+                            description: "The full HTML content of the note to be created. Use <p> and <ul> tags for formatting."
+                        },
+                        tags: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING },
+                            description: "Up to 3 relevant tags for the note."
+                        }
+                    },
+                    required: ["text", "tags"]
+                }
+            }
+        ]
+    };
+
+    const systemInstruction = `You are a helpful AI assistant in a notetaking app.
+- Your primary job is to answer questions based *only* on the provided notes context. Do not use external knowledge. If the answer isn't in the notes, say so. Format your answers using simple markdown.
+- If the user explicitly asks you to create a note (e.g., "make a note about...", "jot down an idea for..."), you MUST use the 'create_note' tool. Do not answer in text. Call the tool.`;
 
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: query,
-            config: { systemInstruction }
+            contents: `User query: "${query}"\n\nNotes context:\n${notesContext}`,
+            config: {
+                systemInstruction,
+                tools: [createNoteTool]
+            },
         });
-        return response.text.trim();
+
+        // Check for function call
+        const functionCall = response.candidates?.[0]?.content?.parts?.find(part => part.functionCall)?.functionCall;
+
+        if (functionCall && functionCall.name === 'create_note') {
+            const { text, tags } = functionCall.args;
+            return {
+                type: 'note',
+                content: "I've created that note for you.", // Static confirmation message
+                noteData: {
+                    text: (text as string) || '',
+                    tags: (tags as string[]) || [],
+                },
+            };
+        }
+        
+        // If no function call, return text response
+        return {
+            type: 'answer',
+            content: response.text || "I'm sorry, I couldn't process that request.",
+        };
     } catch (error) {
         console.error("Error querying notes:", error);
         throw new Error("Failed to get a response from the AI assistant.");

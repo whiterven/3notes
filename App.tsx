@@ -11,6 +11,8 @@ import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRigh
 
 const LOCAL_STORAGE_KEY = 'ai-3d-notes';
 const ENV_STORAGE_KEY = 'ai-3d-notes-env';
+const NOTE_COLORS = ['bg-amber-100', 'bg-sky-100', 'bg-lime-100', 'bg-rose-100', 'bg-violet-100', 'bg-white'];
+
 
 const getInitialNotes = (): Note[] => {
     try {
@@ -137,6 +139,24 @@ const App: React.FC = () => {
     }
     setIsFormVisible(false);
     setEditingNote(null);
+  };
+  
+  const handleAiCreateNote = (noteData: { text: string; tags: string[] }) => {
+    const newNote: Note = {
+      id: `note-${Date.now()}`,
+      text: noteData.text,
+      tags: noteData.tags || [],
+      color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
+      imageUrl: null,
+      drawingUrl: null,
+      audioUrl: null,
+      summary: null,
+      tasks: null,
+      relatedNoteIds: null,
+      stackId: null,
+    };
+    setNotes(prevNotes => [...prevNotes, newNote]);
+    showToast("AI created a new note for you!", "success");
   };
 
   const deleteNote = (id: string) => {
@@ -323,59 +343,59 @@ const App: React.FC = () => {
   const envClass = `env-${environment}`;
 
   return (
-    <div className="min-h-screen w-full bg-amber-50 text-amber-900 font-handwritten selection:bg-amber-400/50 flex flex-col">
-      <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 bg-amber-50/80 backdrop-blur-md z-30 border-b border-amber-200">
-        <div className="text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-amber-800">3D AI Notetaker</h1>
-          <p className="text-xl sm:text-2xl text-amber-600">Capture your ideas in a new dimension.</p>
+    <div className={`min-h-screen w-full text-amber-900 font-handwritten selection:bg-amber-400/50 flex flex-col transition-colors duration-500 ${envClass}`}>
+      <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 z-30 border-b themed-header transition-colors duration-500">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-amber-800">3D AI Notetaker</h1>
+          <p className="text-lg sm:text-xl text-amber-600">Capture your ideas in a new dimension.</p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <button onClick={() => setIsChatVisible(true)} className="hidden sm:flex items-center gap-2 text-xl bg-violet-200 text-violet-800 py-2 px-5 rounded-full hover:bg-violet-300 transition-colors duration-300" title="Ask Your Notes">
-            <BrainCircuitIcon className="w-6 h-6" /> Ask AI
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button onClick={() => setIsChatVisible(true)} className="flex items-center text-base sm:text-xl p-2 sm:py-2 sm:px-4 rounded-full transition-colors duration-300 themed-button-violet" title="Ask Your Notes">
+            <BrainCircuitIcon className="w-6 h-6" /> <span className="hidden sm:inline ml-2">Ask AI</span>
           </button>
           <EnvironmentSelector currentEnv={environment} onSelect={setEnvironment} />
-          <button onClick={handleExport} className="hidden sm:flex items-center gap-2 text-xl bg-amber-200 text-amber-800 py-2 px-5 rounded-full hover:bg-amber-300 transition-colors duration-300" title="Export Notes as JSON">
-            <ExportIcon className="w-6 h-6" /> Export
+          <button onClick={handleExport} className="flex items-center text-base sm:text-xl p-2 sm:py-2 sm:px-4 rounded-full transition-colors duration-300 themed-button" title="Export Notes as JSON">
+            <ExportIcon className="w-6 h-6" /> <span className="hidden sm:inline ml-2">Export</span>
           </button>
-          <button onClick={handleAddNewNote} className="flex items-center gap-2 text-lg sm:text-xl bg-amber-700 text-white py-2 px-4 sm:py-3 sm:px-5 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
-            <PlusIcon className="w-6 h-6" /> New Note
+          <button onClick={handleAddNewNote} className="flex items-center gap-2 text-base sm:text-xl bg-amber-700 text-white p-3 sm:py-3 sm:px-5 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
+            <PlusIcon className="w-6 h-6" /> <span className="hidden sm:inline">New Note</span>
           </button>
         </div>
       </header>
 
-      <section className="p-4 sm:p-6 sm:px-8 space-y-4 z-20 bg-amber-50/80">
+      <section className="p-4 sm:p-6 sm:px-8 space-y-4 z-20 themed-header transition-colors duration-500">
           <div className="relative max-w-2xl mx-auto">
-              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-500 pointer-events-none" />
+              <SearchIcon className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-500 pointer-events-none" />
               <input 
                   type="search"
                   placeholder="Search notes by text, summary, or tag..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full text-lg sm:text-xl p-3 pl-12 bg-white rounded-full border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300"
+                  className="w-full text-base sm:text-xl p-2 sm:p-3 pl-10 sm:pl-12 rounded-full border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300 themed-search-input"
               />
           </div>
           {allTags.length > 0 && (
               <div className="flex flex-wrap justify-center items-center gap-2 max-w-3xl mx-auto">
-                  <TagIcon className="w-5 h-5 text-amber-600" />
+                  <TagIcon className="w-5 h-5 themed-filters-text" />
                   {allTags.map(tag => (
                       <button 
                           key={tag} 
                           onClick={() => toggleTagFilter(tag)}
-                          className={`text-lg px-3 py-1 rounded-full border-2 transition-colors duration-200 ${activeTags.includes(tag) ? 'bg-amber-700 text-white border-amber-700' : 'bg-white text-amber-700 border-amber-300 hover:bg-amber-100'}`}
+                          className={`text-lg px-3 py-1 rounded-full border-2 transition-colors duration-200 ${activeTags.includes(tag) ? 'bg-amber-700 text-white border-amber-700 themed-tag-button-active' : 'bg-white text-amber-700 border-amber-300 hover:bg-amber-100 themed-tag-button'}`}
                       >
                           {tag}
                       </button>
                   ))}
                   {activeTags.length > 0 && (
-                      <button onClick={() => setActiveTags([])} className="text-lg text-red-600 hover:underline">Clear Filters</button>
+                      <button onClick={() => setActiveTags([])} className="text-lg text-red-600 hover:underline themed-tag-button-clear">Clear Filters</button>
                   )}
               </div>
           )}
       </section>
 
-      <main className={`flex-grow flex flex-col items-center justify-center p-4 sm:p-8 transition-colors duration-500 ${envClass}`}>
+      <main className="flex-grow flex flex-col items-center justify-center p-4 sm:p-8">
         {stackingNoteId && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-amber-800/80 text-white p-4 rounded-xl shadow-lg flex items-center gap-4">
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-amber-800/80 text-white p-4 rounded-xl shadow-lg flex items-center gap-4">
                 <p className="text-2xl">Stacking Mode: Select a note to stack on.</p>
                 <button onClick={() => setStackingNoteId(null)} className="text-white hover:bg-white/20 p-2 rounded-full">
                     <CloseIcon className="w-6 h-6" />
@@ -440,11 +460,11 @@ const App: React.FC = () => {
                 </div>
                 {carouselNotes.length > 1 && (
                     <>
-                        <button onClick={goPrev} className="absolute left-4 sm:left-16 top-1/2 -translate-y-1/2 z-30 bg-white/50 hover:bg-white rounded-full p-3 shadow-lg backdrop-blur-sm" aria-label="Previous note">
-                            <ChevronLeftIcon className="w-8 h-8 text-amber-700" />
+                        <button onClick={goPrev} className="absolute left-4 sm:left-16 top-1/2 -translate-y-1/2 z-30 bg-white/50 hover:bg-white rounded-full p-2 sm:p-3 shadow-lg backdrop-blur-sm" aria-label="Previous note">
+                            <ChevronLeftIcon className="w-6 h-6 sm:w-8 sm:h-8 text-amber-700" />
                         </button>
-                         <button onClick={goNext} className="absolute right-4 sm:right-16 top-1/2 -translate-y-1/2 z-30 bg-white/50 hover:bg-white rounded-full p-3 shadow-lg backdrop-blur-sm" aria-label="Next note">
-                            <ChevronRightIcon className="w-8 h-8 text-amber-700" />
+                         <button onClick={goNext} className="absolute right-4 sm:right-16 top-1/2 -translate-y-1/2 z-30 bg-white/50 hover:bg-white rounded-full p-2 sm:p-3 shadow-lg backdrop-blur-sm" aria-label="Next note">
+                            <ChevronRightIcon className="w-6 h-6 sm:w-8 sm:h-8 text-amber-700" />
                         </button>
                     </>
                 )}
@@ -479,6 +499,7 @@ const App: React.FC = () => {
           <AiChatAssistant
             notes={notes}
             onClose={() => setIsChatVisible(false)}
+            onNoteCreate={handleAiCreateNote}
             showToast={showToast}
           />
       )}

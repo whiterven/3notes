@@ -62,6 +62,96 @@
           background-size: 40px 40px;
       }
 
+      /* Themed Header for Dark Environments */
+      .env-library .themed-header, 
+      .env-scifi .themed-header {
+        background-color: rgba(28, 25, 23, 0.7); /* A dark, translucent color */
+        border-bottom-color: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(8px);
+      }
+      
+      .env-library .themed-header h1, .env-scifi .themed-header h1 {
+        color: #fde68a; /* amber-200 */
+      }
+      .env-library .themed-header p, .env-scifi .themed-header p {
+        color: #fcd34d; /* amber-300 */
+      }
+
+      .env-library .themed-filters-text, .env-scifi .themed-filters-text {
+          color: #fcd34d; /* amber-300 */
+      }
+
+      /* Tag button theming for dark mode */
+      .env-library .themed-tag-button, 
+      .env-scifi .themed-tag-button {
+          background-color: rgba(74, 85, 104, 0.5); /* gray-600/50 */
+          color: #d1d5db; /* gray-300 */
+          border-color: #4b5563; /* gray-600 */
+      }
+       .env-library .themed-tag-button-active, 
+      .env-scifi .themed-tag-button-active {
+          background-color: #fde68a; /* amber-200 */
+          color: #78350f; /* amber-900 */
+          border-color: #fde68a;
+      }
+      .env-library .themed-tag-button-clear,
+      .env-scifi .themed-tag-button-clear {
+          color: #fca5a5; /* red-400 */
+      }
+
+
+      /* Make buttons in dark header lighter */
+      .env-library .themed-header .themed-button, 
+      .env-scifi .themed-header .themed-button {
+        background-color: #fde68a; /* amber-200 */
+        color: #92400e; /* amber-800 */
+      }
+      .env-library .themed-header .themed-button:hover, 
+      .env-scifi .themed-header .themed-button:hover {
+        background-color: #fcd34d; /* amber-300 */
+      }
+
+      .env-library .themed-header .themed-button-violet, 
+      .env-scifi .themed-header .themed-button-violet {
+        background-color: #ddd6fe; /* violet-200 */
+        color: #5b21b6; /* violet-800 */
+      }
+      .env-library .themed-header .themed-button-violet:hover, 
+      .env-scifi .themed-header .themed-button-violet:hover {
+        background-color: #c4b5fd; /* violet-300 */
+      }
+      
+      /* Themed Search Input */
+      .themed-search-input {
+          background-color: white;
+          color: #92400e; /* amber-800 */
+      }
+      .themed-search-input::placeholder {
+          color: #a8a29e; /* stone-400 */
+      }
+      .env-library .themed-search-input,
+      .env-scifi .themed-search-input {
+          background-color: rgba(75, 85, 99, 0.4); /* gray-600/40 */
+          color: #fde68a; /* amber-200 */
+          border-color: #4b5563; /* gray-600 */
+      }
+      .env-library .themed-search-input::placeholder,
+      .env-scifi .themed-search-input::placeholder {
+          color: #9ca3af; /* gray-400 */
+      }
+      .env-library .themed-search-input:focus,
+      .env-scifi .themed-search-input:focus {
+          border-color: #fcd34d !important; /* amber-300 */
+          --tw-ring-color: #fcd34d !important; /* amber-300 */
+      }
+
+
+      /* Light theme header should remain as is */
+      .themed-header {
+        background-color: rgba(255, 251, 235, 0.8); /* amber-50/80 */
+        border-bottom-color: #fde68a; /* amber-200 */
+      }
+
       /* Custom Audio Player Styles */
       .custom-audio-player {
         /* Sets the color for the progress bar fill */

@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Content } from "@google/genai";
 import type { Note } from '../types';
 
 const API_KEY = process.env.API_KEY;
@@ -248,12 +248,20 @@ export interface AiResponse {
     groundingMetadata?: any;
 }
 
-export async function queryNotes(query: string, allNotes: Note[], useWebSearch: boolean): Promise<AiResponse> {
+export async function queryNotes(query: string, allNotes: Note[], useWebSearch: boolean, chatHistory: Content[]): Promise<AiResponse> {
      if (useWebSearch) {
         try {
+            const contents: Content[] = [
+                ...chatHistory,
+                {
+                    role: 'user',
+                    parts: [{ text: `First, review the following notes context and our conversation history to see if you can answer the user's query. If the answer is not in the notes, use your search tool to find a relevant, up-to-date answer. \n\nUSER QUERY: "${query}"\n\nNOTES CONTEXT:\n${allNotes.map(n => n.text.replace(/<[^>]*>?/gm, ' ')).join('\n---\n')}` }]
+                }
+            ];
+
             const response = await ai.models.generateContent({
                model: "gemini-2.5-flash",
-               contents: `First, review the following notes context to see if you can answer the user's query. If the answer is not in the notes, use your search tool to find a relevant, up-to-date answer. \n\nUSER QUERY: "${query}"\n\nNOTES CONTEXT:\n${allNotes.map(n => n.text.replace(/<[^>]*>?/gm, ' ')).join('\n---\n')}`,
+               contents: contents,
                config: {
                  tools: [{googleSearch: {}}],
                },
@@ -333,14 +341,22 @@ export async function queryNotes(query: string, allNotes: Note[], useWebSearch: 
     };
 
     const systemInstruction = `You are a helpful AI assistant in a notetaking app.
-- Your primary job is to answer questions based *only* on the provided notes context. Do not use external knowledge. If the answer isn't in the notes, say so. Format your answers using simple markdown.
+- Your primary job is to answer questions based *only* on the provided notes context and conversation history. Do not use external knowledge. If the answer isn't in the notes, say so. Format your answers using simple markdown.
 - If the user explicitly asks you to create a note (e.g., "make a note about...", "jot down an idea for..."), you MUST use the 'create_note' tool. Do not answer in text.
 - If the user asks to modify, change, add to, or update an existing note, you MUST use the 'update_note' tool. You must find the correct noteId from the context. Do not answer in text.`;
+    
+    const contents: Content[] = [
+        ...chatHistory,
+        {
+            role: 'user',
+            parts: [{ text: `User query: "${query}"\n\nNotes context:\n${notesContext}` }]
+        }
+    ];
 
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `User query: "${query}"\n\nNotes context:\n${notesContext}`,
+            contents: contents,
             config: {
                 systemInstruction,
                 tools: [tools]

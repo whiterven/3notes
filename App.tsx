@@ -387,10 +387,10 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen w-full text-amber-900 font-handwritten selection:bg-amber-400/50 flex flex-col transition-colors duration-500 ${envClass} ${isDarkTheme ? 'dark' : ''}`}>
-      <header className="p-4 sm:p-6 flex justify-between items-center sticky top-0 z-30 border-b themed-header transition-colors duration-500">
+      <header className="p-3 sm:p-4 flex justify-between items-center sticky top-0 z-30 border-b themed-header transition-colors duration-500">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-amber-800">3D AI Notetaker</h1>
-          <p className="text-lg sm:text-xl text-amber-600">Capture your ideas in a new dimension.</p>
+          <h1 className="text-2xl sm:text-4xl font-bold text-amber-800">3D AI Notetaker</h1>
+          <p className="text-base sm:text-xl text-amber-600">Capture your ideas in a new dimension.</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
            <button onClick={() => setIsInsightsVisible(true)} className="flex items-center text-base sm:text-lg p-1.5 sm:py-1.5 sm:px-3 rounded-full transition-colors duration-300 themed-button-violet" title="Get AI Insights">
@@ -450,8 +450,8 @@ const App: React.FC = () => {
         )}
         {notes.length > 0 ? (
             carouselNotes.length > 0 ? (
-            <div className="relative w-full h-[550px] flex items-center justify-center overflow-hidden">
-                <div className="relative w-full max-w-sm h-[400px] transform-style-preserve-3d perspective-1000">
+            <div className="relative w-full h-[480px] sm:h-[550px] flex items-center justify-center overflow-hidden">
+                <div className="relative w-full max-w-xs sm:max-w-sm h-[384px] sm:h-[400px] transform-style-preserve-3d perspective-1000">
                     {carouselNotes.map((note, index) => {
                         const offset = index - activeIndex;
                         const isVisible = Math.abs(offset) <= 2; // Show active, and 2 on each side
@@ -508,11 +508,11 @@ const App: React.FC = () => {
                 </div>
                 {carouselNotes.length > 1 && (
                     <>
-                        <button onClick={goPrev} className="absolute left-4 sm:left-16 top-1/2 -translate-y-1/2 z-30 bg-white/50 hover:bg-white rounded-full p-2 sm:p-3 shadow-lg backdrop-blur-sm" aria-label="Previous note">
-                            <ChevronLeftIcon className="w-6 h-6 sm:w-8 sm:h-8 text-amber-700" />
+                        <button onClick={goPrev} className="absolute left-2 sm:left-16 top-1/2 -translate-y-1/2 z-30 bg-white/50 hover:bg-white rounded-full p-1 sm:p-3 shadow-lg backdrop-blur-sm" aria-label="Previous note">
+                            <ChevronLeftIcon className="w-5 h-5 sm:w-8 sm:h-8 text-amber-700" />
                         </button>
-                         <button onClick={goNext} className="absolute right-4 sm:right-16 top-1/2 -translate-y-1/2 z-30 bg-white/50 hover:bg-white rounded-full p-2 sm:p-3 shadow-lg backdrop-blur-sm" aria-label="Next note">
-                            <ChevronRightIcon className="w-6 h-6 sm:w-8 sm:h-8 text-amber-700" />
+                         <button onClick={goNext} className="absolute right-2 sm:right-16 top-1/2 -translate-y-1/2 z-30 bg-white/50 hover:bg-white rounded-full p-1 sm:p-3 shadow-lg backdrop-blur-sm" aria-label="Next note">
+                            <ChevronRightIcon className="w-5 h-5 sm:w-8 sm:h-8 text-amber-700" />
                         </button>
                     </>
                 )}

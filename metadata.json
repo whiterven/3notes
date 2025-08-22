@@ -1,0 +1,7 @@
+{
+  "name": "3D AI Notetaker",
+  "description": "A beautiful 3D notetaking application that integrates text, AI-generated images, and audio recordings. Powered by Gemini for smart summaries and Imagen for visuals.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

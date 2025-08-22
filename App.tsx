@@ -4,10 +4,13 @@ import { AddNoteForm } from './components/AddNoteForm';
 import { NoteCard } from './components/NoteCard';
 import { Toast } from './components/Toast';
 import { AiChatAssistant } from './components/AiChatAssistant';
+import { EnvironmentSelector } from './components/EnvironmentSelector';
+import type { Environment } from './components/EnvironmentSelector';
 import { summarizeText, transcribeAudio, extractTasks, findRelatedNotes } from './services/geminiService';
-import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon } from './components/icons';
+import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon } from './components/icons';
 
 const LOCAL_STORAGE_KEY = 'ai-3d-notes';
+const ENV_STORAGE_KEY = 'ai-3d-notes-env';
 
 const getInitialNotes = (): Note[] => {
     try {
@@ -22,6 +25,7 @@ const getInitialNotes = (): Note[] => {
                     drawingUrl: note.drawingUrl || null,
                     tasks: note.tasks || null,
                     relatedNoteIds: note.relatedNoteIds || null,
+                    stackId: note.stackId || null,
                 }));
             }
         }
@@ -29,6 +33,18 @@ const getInitialNotes = (): Note[] => {
         console.error("Could not load notes from local storage", error);
     }
     return []; 
+};
+
+const getInitialEnv = (): Environment => {
+    try {
+        const savedEnv = window.localStorage.getItem(ENV_STORAGE_KEY);
+        if (savedEnv && ['default', 'gallery', 'library', 'scifi'].includes(savedEnv)) {
+            return savedEnv as Environment;
+        }
+    } catch (error) {
+        console.error("Could not load environment from local storage", error);
+    }
+    return 'default';
 };
 
 const App: React.FC = () => {
@@ -44,6 +60,8 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [environment, setEnvironment] = useState<Environment>(getInitialEnv);
+  const [stackingNoteId, setStackingNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -53,6 +71,14 @@ const App: React.FC = () => {
         showToast("Error: Could not save notes.");
     }
   }, [notes]);
+  
+  useEffect(() => {
+    try {
+        window.localStorage.setItem(ENV_STORAGE_KEY, environment);
+    } catch (error) {
+        console.error("Could not save environment to local storage", error);
+    }
+  }, [environment]);
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -79,10 +105,14 @@ const App: React.FC = () => {
         return searchMatch && tagsMatch;
     });
   }, [notes, searchTerm, activeTags]);
+  
+  const carouselNotes = useMemo(() => {
+    return filteredNotes.filter(note => !note.stackId);
+  }, [filteredNotes]);
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [filteredNotes.length]);
+  }, [carouselNotes.length]);
 
 
   const showToast = (message: string, type: ToastType = 'error') => {
@@ -223,11 +253,11 @@ const App: React.FC = () => {
   };
   
   const handleNavigateToNote = (id: string) => {
-      const noteIndex = filteredNotes.findIndex(n => n.id === id);
+      const noteIndex = carouselNotes.findIndex(n => n.id === id);
       if (noteIndex !== -1) {
           setActiveIndex(noteIndex);
       } else {
-          showToast("Could not find the selected note. It might be filtered out.");
+          showToast("Could not find the selected note. It might be filtered out or stacked.");
       }
   };
   
@@ -248,6 +278,17 @@ const App: React.FC = () => {
         console.error("Failed to export notes:", error);
         showToast("An error occurred during export.");
     }
+  };
+  
+  const handleStartStack = (id: string) => {
+    setStackingNoteId(current => (current === id ? null : id));
+  };
+  
+  const handleFinishStack = (targetId: string) => {
+    if (!stackingNoteId || stackingNoteId === targetId) return;
+    setNotes(prev => prev.map(n => (n.id === stackingNoteId ? { ...n, stackId: targetId } : n)));
+    setStackingNoteId(null);
+    showToast("Notes stacked successfully!", "success");
   };
 
   const toggleTagFilter = (tag: string) => {
@@ -272,13 +313,14 @@ const App: React.FC = () => {
   };
 
   const goNext = () => {
-    setActiveIndex((prev) => (prev + 1) % filteredNotes.length);
+    setActiveIndex((prev) => (prev + 1) % carouselNotes.length);
   };
   
   const goPrev = () => {
-    setActiveIndex((prev) => (prev - 1 + filteredNotes.length) % filteredNotes.length);
+    setActiveIndex((prev) => (prev - 1 + carouselNotes.length) % carouselNotes.length);
   };
 
+  const envClass = `env-${environment}`;
 
   return (
     <div className="min-h-screen w-full bg-amber-50 text-amber-900 font-handwritten selection:bg-amber-400/50 flex flex-col">
@@ -291,6 +333,7 @@ const App: React.FC = () => {
           <button onClick={() => setIsChatVisible(true)} className="hidden sm:flex items-center gap-2 text-xl bg-violet-200 text-violet-800 py-2 px-5 rounded-full hover:bg-violet-300 transition-colors duration-300" title="Ask Your Notes">
             <BrainCircuitIcon className="w-6 h-6" /> Ask AI
           </button>
+          <EnvironmentSelector currentEnv={environment} onSelect={setEnvironment} />
           <button onClick={handleExport} className="hidden sm:flex items-center gap-2 text-xl bg-amber-200 text-amber-800 py-2 px-5 rounded-full hover:bg-amber-300 transition-colors duration-300" title="Export Notes as JSON">
             <ExportIcon className="w-6 h-6" /> Export
           </button>
@@ -330,12 +373,20 @@ const App: React.FC = () => {
           )}
       </section>
 
-      <main className="flex-grow flex flex-col items-center justify-center p-4 sm:p-8">
+      <main className={`flex-grow flex flex-col items-center justify-center p-4 sm:p-8 transition-colors duration-500 ${envClass}`}>
+        {stackingNoteId && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 bg-amber-800/80 text-white p-4 rounded-xl shadow-lg flex items-center gap-4">
+                <p className="text-2xl">Stacking Mode: Select a note to stack on.</p>
+                <button onClick={() => setStackingNoteId(null)} className="text-white hover:bg-white/20 p-2 rounded-full">
+                    <CloseIcon className="w-6 h-6" />
+                </button>
+            </div>
+        )}
         {notes.length > 0 ? (
-            filteredNotes.length > 0 ? (
+            carouselNotes.length > 0 ? (
             <div className="relative w-full h-[550px] flex items-center justify-center overflow-hidden">
                 <div className="relative w-full max-w-sm h-[400px] transform-style-preserve-3d perspective-1000">
-                    {filteredNotes.map((note, index) => {
+                    {carouselNotes.map((note, index) => {
                         const offset = index - activeIndex;
                         const isVisible = Math.abs(offset) <= 2; // Show active, and 2 on each side
                         const transform = `rotateY(${offset * -25}deg) scale(${1 - Math.abs(offset) * 0.2}) translateX(${offset * 40}%) translateZ(${Math.abs(offset) * -150}px)`;
@@ -346,6 +397,8 @@ const App: React.FC = () => {
                         const relatedNotes = (note.relatedNoteIds || [])
                             .map(id => notes.find(n => n.id === id))
                             .filter((n): n is Note => !!n);
+                            
+                        const stackedNotes = filteredNotes.filter(n => n.stackId === note.id);
 
                         return (
                             <div
@@ -353,6 +406,13 @@ const App: React.FC = () => {
                                 className="absolute top-0 left-0 w-full h-full transition-all duration-500 ease-in-out"
                                 style={{ transform, opacity, zIndex, pointerEvents }}
                             >
+                                {stackedNotes.map((stackedNote, stackIndex) => (
+                                    <div
+                                        key={stackedNote.id}
+                                        className={`absolute top-0 left-0 w-full h-full rounded-lg shadow-xl border border-amber-300/50 ${stackedNote.color} opacity-80`}
+                                        style={{ transform: `translateY(${(stackIndex + 1) * 6}px) translateX(${(stackIndex + 1) * 4}px) translateZ(-${(stackIndex + 1) * 5}px) scale(${1 - (stackIndex + 1) * 0.02})` }}
+                                    />
+                                ))}
                                 <NoteCard
                                     note={note}
                                     relatedNotes={relatedNotes}
@@ -365,16 +425,20 @@ const App: React.FC = () => {
                                     onFindTasks={() => handleFindTasks(note.id)}
                                     onFindRelatedNotes={() => handleFindRelatedNotes(note.id)}
                                     onNavigateToNote={handleNavigateToNote}
+                                    onStartStack={handleStartStack}
+                                    onFinishStack={handleFinishStack}
                                     isSummarizing={isLoadingSummary === note.id}
                                     isTranscribing={isTranscribing === note.id}
                                     isExtractingTasks={isExtractingTasks === note.id}
                                     isFindingLinks={isFindingLinks === note.id}
+                                    stackingNoteId={stackingNoteId}
+                                    stackCount={stackedNotes.length}
                                 />
                             </div>
                         )
                     })}
                 </div>
-                {filteredNotes.length > 1 && (
+                {carouselNotes.length > 1 && (
                     <>
                         <button onClick={goPrev} className="absolute left-4 sm:left-16 top-1/2 -translate-y-1/2 z-30 bg-white/50 hover:bg-white rounded-full p-3 shadow-lg backdrop-blur-sm" aria-label="Previous note">
                             <ChevronLeftIcon className="w-8 h-8 text-amber-700" />

@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import type { Note } from '../types';
-import { CloseIcon, LoaderIcon, SparklesIcon, EditIcon, TranscribeIcon, ClipboardListIcon, LinkIcon } from './icons';
+import { CloseIcon, LoaderIcon, SparklesIcon, EditIcon, TranscribeIcon, ClipboardListIcon, LinkIcon, LayersIcon } from './icons';
 
 interface NoteCardProps {
   note: Note;
@@ -14,10 +14,14 @@ interface NoteCardProps {
   onFindTasks: (id: string) => void;
   onFindRelatedNotes: (id: string) => void;
   onNavigateToNote: (id: string) => void;
+  onStartStack: (id: string) => void;
+  onFinishStack: (id: string) => void;
   isSummarizing: boolean;
   isTranscribing: boolean;
   isExtractingTasks: boolean;
   isFindingLinks: boolean;
+  stackingNoteId: string | null;
+  stackCount: number;
 }
 
 export const NoteCard: React.FC<NoteCardProps> = ({ 
@@ -32,10 +36,14 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     onFindTasks,
     onFindRelatedNotes,
     onNavigateToNote,
+    onStartStack,
+    onFinishStack,
     isSummarizing, 
     isTranscribing,
     isExtractingTasks,
-    isFindingLinks
+    isFindingLinks,
+    stackingNoteId,
+    stackCount,
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   
@@ -52,26 +60,45 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   };
   
   const noteHasText = note.text && note.text.replace(/<[^>]*>?/gm, '').trim().length > 0;
+  const isStacking = !!stackingNoteId;
+  const isThisNoteStackingSource = stackingNoteId === note.id;
+  const isThisNoteStackingTarget = isStacking && !isThisNoteStackingSource;
 
   return (
     <div 
       className={`
       w-full max-w-sm sm:w-80 h-96 p-5 rounded-lg shadow-xl border border-amber-300/50 
-      flex flex-col gap-3 relative transition-shadow duration-300 ease-in-out
+      flex flex-col gap-3 relative transition-all duration-300 ease-in-out
       ${note.color}
       `}
       aria-label={`Note with text: ${note.text.substring(0, 30)}...`}
     >
-        <div className="absolute top-3 right-3 flex gap-1.5 z-10">
-            <button onClick={() => onEdit(note.id)} className="bg-amber-500/60 text-white rounded-full p-1.5 hover:bg-amber-500 transition-colors" aria-label="Edit note">
+        {isThisNoteStackingTarget && (
+            <button
+                onClick={() => onFinishStack(note.id)}
+                className="absolute inset-0 bg-amber-800/80 rounded-lg z-20 flex flex-col items-center justify-center text-white text-3xl font-bold animate-fade-in-up"
+            >
+                <LayersIcon className="w-12 h-12 mb-2"/>
+                Stack Here
+            </button>
+        )}
+
+        <div className={`absolute top-3 right-3 flex gap-1.5 z-10 ${isStacking ? 'opacity-20' : ''}`}>
+            <button onClick={() => onEdit(note.id)} disabled={isStacking} className="bg-amber-500/60 text-white rounded-full p-1.5 hover:bg-amber-500 transition-colors" aria-label="Edit note">
                 <EditIcon className="w-5 h-5"/>
             </button>
-            <button onClick={() => onDelete(note.id)} className="bg-red-500/60 text-white rounded-full p-1.5 hover:bg-red-500 transition-colors" aria-label="Delete note">
+            <button onClick={() => onDelete(note.id)} disabled={isStacking} className="bg-red-500/60 text-white rounded-full p-1.5 hover:bg-red-500 transition-colors" aria-label="Delete note">
                 <CloseIcon className="w-5 h-5"/>
             </button>
         </div>
         
-        <div className="flex-grow overflow-y-auto pr-2 scrollbar-thin space-y-3">
+        {stackCount > 0 && !isStacking && (
+            <div className="absolute top-3 left-3 bg-amber-600 text-white text-lg font-bold w-9 h-9 flex items-center justify-center rounded-full z-10 shadow-md" title={`${stackCount} more notes in this stack`}>
+                +{stackCount}
+            </div>
+        )}
+
+        <div className={`flex-grow overflow-y-auto pr-2 thin-scrollbar space-y-3 ${isStacking ? 'opacity-20' : ''}`}>
             {note.drawingUrl && (
                 <div className="w-full h-40 rounded-md overflow-hidden shadow-inner border border-amber-200 bg-white">
                     <img src={note.drawingUrl} alt="User drawing" className="w-full h-full object-contain" />
@@ -103,6 +130,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                             onClick={() => onTagClick(tag)}
                             className="bg-amber-200/80 text-amber-800 text-base px-2.5 py-0.5 rounded-full hover:bg-amber-300 transition-colors"
                             aria-label={`Filter by tag: ${tag}`}
+                            disabled={isStacking}
                         >
                             #{tag}
                         </button>
@@ -140,6 +168,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                             onClick={() => onNavigateToNote(related.id)}
                             className="bg-violet-200/80 text-violet-800 text-base px-2.5 py-0.5 rounded-full hover:bg-violet-300 transition-colors"
                             aria-label={`Go to note: ${related.text.substring(0, 20)}`}
+                            disabled={isStacking}
                         >
                            {(related.text || "Untitled Note").replace(/<[^>]*>?/gm, '').substring(0, 20)}...
                         </button>
@@ -149,12 +178,12 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             )}
         </div>
 
-        <div className="mt-auto flex flex-col gap-2 pt-2">
+        <div className={`mt-auto flex flex-col gap-2 pt-2 ${isStacking ? 'opacity-20' : ''}`}>
             <div className="grid grid-cols-2 gap-2">
                 {note.audioUrl && (
                     <button
                         onClick={() => onTranscribe(note.id)}
-                        disabled={isTranscribing}
+                        disabled={isTranscribing || isStacking}
                         className="bg-sky-400/50 text-sky-800 w-full py-2 rounded-lg text-lg flex items-center justify-center gap-2 hover:bg-sky-400 transition duration-200 disabled:bg-sky-200 col-span-2"
                         aria-label="Transcribe audio to text with AI"
                     >
@@ -165,7 +194,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 {noteHasText && !note.summary && (
                     <button
                         onClick={() => onSummarize(note.id)}
-                        disabled={isSummarizing}
+                        disabled={isSummarizing || isStacking}
                         className="bg-amber-400/50 text-amber-800 w-full py-2 rounded-lg text-lg flex items-center justify-center gap-2 hover:bg-amber-400 transition duration-200 disabled:bg-amber-200"
                         aria-label="Summarize note with AI"
                     >
@@ -176,7 +205,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                  {noteHasText && (
                     <button
                         onClick={() => onFindTasks(note.id)}
-                        disabled={isExtractingTasks}
+                        disabled={isExtractingTasks || isStacking}
                         className="bg-sky-400/50 text-sky-800 w-full py-2 rounded-lg text-lg flex items-center justify-center gap-2 hover:bg-sky-400 transition duration-200 disabled:bg-sky-200"
                         aria-label="Find tasks in note with AI"
                     >
@@ -185,15 +214,30 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                     </button>
                 )}
             </div>
-             <button
-                onClick={() => onFindRelatedNotes(note.id)}
-                disabled={isFindingLinks}
-                className="bg-violet-400/50 text-violet-800 w-full py-2 rounded-lg text-lg flex items-center justify-center gap-2 hover:bg-violet-400 transition duration-200 disabled:bg-violet-200"
-                aria-label="Find related notes with AI"
-            >
-                {isFindingLinks ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> Finding Links...</> ) 
-                : ( <><LinkIcon className="w-5 h-5" /> Find Related</> )}
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+                 <button
+                    onClick={() => onFindRelatedNotes(note.id)}
+                    disabled={isFindingLinks || isStacking}
+                    className="bg-violet-400/50 text-violet-800 w-full py-2 rounded-lg text-lg flex items-center justify-center gap-2 hover:bg-violet-400 transition duration-200 disabled:bg-violet-200"
+                    aria-label="Find related notes with AI"
+                >
+                    {isFindingLinks ? ( <><LoaderIcon className="w-5 h-5 animate-spin" /> Finding Links...</> ) 
+                    : ( <><LinkIcon className="w-5 h-5" /> Find Related</> )}
+                </button>
+                <button
+                    onClick={() => onStartStack(note.id)}
+                    disabled={isStacking}
+                    className={`w-full py-2 rounded-lg text-lg flex items-center justify-center gap-2 transition duration-200 ${
+                        isThisNoteStackingSource
+                          ? 'bg-amber-600 text-white animate-pulse'
+                          : 'bg-gray-400/50 text-gray-800 hover:bg-gray-400 disabled:bg-gray-200'
+                      }`}
+                    aria-label="Stack this note on another"
+                >
+                   <LayersIcon className="w-5 h-5" />
+                   {isThisNoteStackingSource ? 'Select Target' : 'Stack'}
+                </button>
+            </div>
         </div>
     </div>
   );

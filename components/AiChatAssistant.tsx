@@ -14,6 +14,33 @@ interface Message {
     content: string;
 }
 
+const markdownToHtml = (text: string) => {
+    let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // Bold (**text** or __text__)
+    html = html.replace(/\*\*(.*?)\*\*|__(.*?)__/g, '<strong>$1$2</strong>');
+    // Italic (*text* or _text_)
+    html = html.replace(/\*(.*?)\*|_(.*?)_/g, '<em>$1$2</em>');
+
+    // Unordered lists (- item or * item)
+    html = html.replace(/^\s*[-*]\s+(.*)$/gm, '<li>$1</li>');
+    // Wrap list items in <ul> tags
+    html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+    // Join adjacent lists
+    html = html.replace(/<\/ul>\s*<ul>/g, ''); 
+
+    // Convert newlines to <br> tags, but not inside list structures
+    html = html.replace(/\n/g, '<br />');
+    html = html.replace(/<br \/>\s*<ul>/g, '<ul>');
+    html = html.replace(/<\/ul>\s*<br \/>/g, '</ul>');
+    html = html.replace(/<\/li>\s*<br \/>\s*<li>/g, '</li><li>');
+    
+    return html;
+};
+
 export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose, showToast }) => {
     const [messages, setMessages] = useState<Message[]>([
         { role: 'ai', content: "Hello! Ask me anything about your notes, and I'll do my best to find the answer for you." }
@@ -63,12 +90,16 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                     </button>
                 </header>
                 
-                <div className="flex-grow p-4 overflow-y-auto space-y-6">
+                <div className="flex-grow p-4 overflow-y-auto space-y-6 thin-scrollbar">
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex gap-3 text-2xl ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'ai' && <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><BrainCircuitIcon className="w-6 h-6 text-violet-700" /></div>}
-                            <div className={`max-w-xl p-4 rounded-2xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none'}`}>
-                                <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                            <div className={`max-w-xl p-4 rounded-2xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none'} [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mb-1`}>
+                                {msg.role === 'user' ? (
+                                    <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                                ) : (
+                                    <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
+                                )}
                             </div>
                         </div>
                     ))}

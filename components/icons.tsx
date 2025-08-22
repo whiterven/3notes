@@ -132,3 +132,21 @@ export const LinkIcon: React.FC<IconProps> = ({ className }) => (
         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/>
     </svg>
 );
+
+export const PaletteIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+        <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+        <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+        <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.667 0-.424-.103-.822-.283-1.177-.19-.369-.423-.743-.69-1.123-.26-.369-.546-.742-.858-1.123s-.642-.778-1.01-1.177c-.373-.403-.77- .823-1.18-1.267-.414-.44-.833-.895-1.26-1.365-.42-.46-.83-.923-1.23-1.395-.4-.47-.78-.94-1.14-1.422s-.7-1.02-1-1.575c-.3- .553-.5-1.13-.5-1.728 0-1.657 1.343-3 3-3 1.657 0 3 1.343 3 3 0 .598-.2 1.175-.5 1.728s-.74 1.02-1.14 1.422c-.4.47-.81.935-1.23 1.395-.427.47-.846.925-1.26 1.365-.41.444-.807.864-1.18 1.267-.368.4-.707.78-1.01 1.177s-.53  .754-.69 1.123c-.18.355-.283.753-.283 1.177C4.352 19.254 5.074 20 6 20c5.5 0 10-4.5 10-10S17.5 2 12 2z"/>
+    </svg>
+);
+
+export const LayersIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.84l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84Z"/>
+        <path d="m22 17.65-8.58 3.9a2 2 0 0 1-1.66 0L3.18 17.65"/>
+        <path d="m22 12.65-8.58 3.9a2 2 0 0 1-1.66 0L3.18 12.65"/>
+    </svg>
+);

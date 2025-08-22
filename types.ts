@@ -9,6 +9,7 @@ export interface Note {
   tags: string[];
   tasks: string[] | null;
   relatedNoteIds: string[] | null;
+  stackId: string | null;
 }
 
 export type ToastType = 'error' | 'success';

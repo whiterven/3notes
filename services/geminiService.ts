@@ -199,7 +199,7 @@ export async function queryNotes(query: string, allNotes: Note[]): Promise<strin
         `.trim();
     }).join('\n---\n');
 
-    const systemInstruction = `You are a helpful AI assistant integrated into a notetaking app. Your task is to answer the user's questions based *only* on the provided notes context. Do not use any external knowledge. If the answer cannot be found in the notes, state that clearly. Here is the context of all the user's notes:\n\n${notesContext}`;
+    const systemInstruction = `You are a helpful AI assistant integrated into a notetaking app. Your task is to answer the user's questions based *only* on the provided notes context. Do not use any external knowledge. If the answer cannot be found in the notes, state that clearly. Format your response using simple markdown (bold, italics, and unordered lists) for better readability. Here is the context of all the user's notes:\n\n${notesContext}`;
 
     try {
         const response = await ai.models.generateContent({

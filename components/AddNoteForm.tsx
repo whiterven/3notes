@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Note, ToastType } from '../types';
 import { generateImage, generateImagePrompt } from '../services/geminiService';
 import { AudioRecorder } from './AudioRecorder';
-import { ImageIcon, MicIcon, PlusIcon, SparklesIcon, LoaderIcon, CloseIcon, LightbulbIcon, TagIcon, PencilIcon, BoldIcon, ItalicIcon, ListIcon, CheckSquareIcon } from './icons';
+import { ImageIcon, MicIcon, PlusIcon, SparklesIcon, LoaderIcon, CloseIcon, LightbulbIcon, TagIcon, PencilIcon, BoldIcon, ItalicIcon, ListIcon, CheckSquareIcon, LayersIcon } from './icons';
 
 interface DrawingCanvasProps {
   initialDrawing: string | null;
@@ -117,6 +117,7 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [color, setColor] = useState(NOTE_COLORS[0]);
   const [tags, setTags] = useState<string[]>([]);
+  const [stackId, setStackId] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
   const [imagePrompt, setImagePrompt] = useState('');
   const [showImageGenerator, setShowImageGenerator] = useState(false);
@@ -136,6 +137,7 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
       setAudioUrl(noteToEdit.audioUrl);
       setColor(noteToEdit.color);
       setTags(noteToEdit.tags || []);
+      setStackId(noteToEdit.stackId || null);
     }
      if (editorRef.current) editorRef.current.focus();
   }, [noteToEdit]);
@@ -199,6 +201,11 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
   const removeTag = (indexToRemove: number) => {
     setTags(tags.filter((_, index) => index !== indexToRemove));
   };
+  
+  const handleUnstack = () => {
+    setStackId(null);
+    showToast("Note has been unstacked. Save to confirm.", "success");
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,7 +214,7 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
         showToast("Please add some content to your note.");
         return;
     }
-    onSave({ text, imageUrl, drawingUrl, audioUrl, color, tags }, noteToEdit?.id);
+    onSave({ text, imageUrl, drawingUrl, audioUrl, color, tags, stackId }, noteToEdit?.id);
     onClose();
   };
 
@@ -231,15 +238,16 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
             ref={editorRef}
             contentEditable
             suppressContentEditableWarning
-            className="w-full bg-transparent border-b-2 border-amber-300 focus:border-amber-500 text-2xl sm:text-3xl p-2 min-h-[120px] resize-y overflow-y-auto transition duration-300 focus:outline-none placeholder-amber-500 [&_ul]:list-disc [&_ul]:pl-8 [&_.checklist-item]:flex [&_.checklist-item]:items-center [&_.checklist-item]:gap-2 [&_.checklist-item_input]:w-5 [&_.checklist-item_input]:h-5 [&_.checklist-item_input]:accent-amber-600"
+            className="w-full bg-transparent border-b-2 border-amber-300 focus:border-amber-500 text-2xl sm:text-3xl p-2 min-h-[250px] resize-y overflow-y-auto transition duration-300 focus:outline-none placeholder-amber-500 [&_ul]:list-disc [&_ul]:pl-8 [&_.checklist-item]:flex [&_.checklist-item]:items-center [&_.checklist-item]:gap-2 [&_.checklist-item_input]:w-5 [&_.checklist-item_input]:h-5 [&_.checklist-item_input]:accent-amber-600 thin-scrollbar"
             data-placeholder="Jot down an idea..."
           />
           
-          {(imageUrl || audioUrl || drawingUrl) && (
+          {(imageUrl || audioUrl || drawingUrl || stackId) && (
             <div className="flex items-center gap-4 text-sm text-amber-700 flex-wrap">
                 {drawingUrl && <div className="flex items-center gap-2"><PencilIcon className="w-5 h-5 text-amber-600" /> Drawing Attached</div>}
                 {imageUrl && <div className="flex items-center gap-2"><ImageIcon className="w-5 h-5 text-amber-600" /> Image Attached</div>}
                 {audioUrl && <div className="flex items-center gap-2"><MicIcon className="w-5 h-5 text-amber-600" /> Audio Attached</div>}
+                {stackId && <button onClick={handleUnstack} className="flex items-center gap-2 bg-rose-100 text-rose-700 px-2 py-1 rounded-md hover:bg-rose-200"><LayersIcon className="w-5 h-5" /> Note is stacked. Click to unstack.</button>}
             </div>
           )}
 

@@ -138,7 +138,7 @@ const App: React.FC = () => {
             tasks: null,
             relatedNoteIds: null,
         };
-        setNotes(prevNotes => [...prevNotes, newNote]);
+        setNotes(prevNotes => [newNote, ...prevNotes]);
     }
     setIsFormVisible(false);
     setEditingNote(null);
@@ -158,7 +158,7 @@ const App: React.FC = () => {
       relatedNoteIds: null,
       stackId: null,
     };
-    setNotes(prevNotes => [...prevNotes, newNote]);
+    setNotes(prevNotes => [newNote, ...prevNotes]);
     showToast("AI created a new note for you!", "success");
   };
   

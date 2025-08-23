@@ -387,24 +387,24 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen w-full text-amber-900 font-handwritten selection:bg-amber-400/50 flex flex-col transition-colors duration-500 ${envClass} ${isDarkTheme ? 'dark' : ''}`}>
-      <header className="p-3 sm:p-4 flex justify-between items-center sticky top-0 z-30 border-b themed-header transition-colors duration-500">
+      <header className="p-2 sm:p-3 flex justify-between items-center sticky top-0 z-30 border-b themed-header transition-colors duration-500">
         <div>
-          <h1 className="text-2xl sm:text-4xl font-bold text-amber-800">3D AI Notetaker</h1>
-          <p className="text-base sm:text-xl text-amber-600">Capture your ideas in a new dimension.</p>
+          <h1 className="text-xl sm:text-3xl font-bold text-amber-800">Stickon AI</h1>
+          <p className="text-sm sm:text-lg text-amber-600">Capture your ideas in a new dimension.</p>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-           <button onClick={() => setIsInsightsVisible(true)} className="flex items-center text-base sm:text-lg p-1.5 sm:py-1.5 sm:px-3 rounded-full transition-colors duration-300 themed-button-violet" title="Get AI Insights">
-            <TrendingUpIcon className="w-6 h-6" /> <span className="hidden sm:inline ml-2">Insights</span>
+        <div className="flex items-center gap-1 sm:gap-2">
+           <button onClick={() => setIsInsightsVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button-violet" title="Get AI Insights">
+            <TrendingUpIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Insights</span>
           </button>
-          <button onClick={() => setIsChatVisible(true)} className="flex items-center text-base sm:text-lg p-1.5 sm:py-1.5 sm:px-3 rounded-full transition-colors duration-300 themed-button-violet" title="Ask Your Notes">
-            <BrainCircuitIcon className="w-6 h-6" /> <span className="hidden sm:inline ml-2">Ask AI</span>
+          <button onClick={() => setIsChatVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button-violet" title="Ask Your Notes">
+            <BrainCircuitIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Ask AI</span>
           </button>
           <EnvironmentSelector currentEnv={environment} onSelect={setEnvironment} />
-          <button onClick={handleExport} className="flex items-center text-base sm:text-lg p-1.5 sm:py-1.5 sm:px-3 rounded-full transition-colors duration-300 themed-button" title="Export Notes as JSON">
-            <ExportIcon className="w-6 h-6" /> <span className="hidden sm:inline ml-2">Export</span>
+          <button onClick={handleExport} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Export Notes as JSON">
+            <ExportIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Export</span>
           </button>
-          <button onClick={handleAddNewNote} className="flex items-center gap-2 text-base sm:text-lg bg-amber-700 text-white p-2.5 sm:py-2.5 sm:px-4 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
-            <PlusIcon className="w-6 h-6" /> <span className="hidden sm:inline">New Note</span>
+          <button onClick={handleAddNewNote} className="flex items-center gap-1.5 text-sm sm:text-base bg-amber-700 text-white p-2 sm:px-3 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
+            <PlusIcon className="w-5 h-5" /> <span className="hidden sm:inline">New Note</span>
           </button>
         </div>
       </header>
@@ -417,7 +417,7 @@ const App: React.FC = () => {
                   placeholder="Search notes by text, summary, or tag..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full text-base sm:text-xl p-2 sm:p-3 pl-10 sm:pl-12 rounded-full border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300 themed-search-input"
+                  className="w-full text-base sm:text-xl p-1.5 sm:p-3 pl-9 sm:pl-12 rounded-full border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300 themed-search-input"
               />
           </div>
           {allTags.length > 0 && (

@@ -78,7 +78,7 @@ export const InsightsModal: React.FC<InsightsModalProps> = ({ notes, onClose, sh
                          </div>
                     ) : (
                         <div 
-                            className="prose prose-xl text-amber-900 themed-modal-text-alt [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mb-1"
+                            className="prose prose-xl prose-headings:text-amber-800 dark:prose-headings:text-amber-200 prose-strong:text-amber-900 dark:prose-strong:text-amber-100 text-amber-900 themed-modal-text-alt [&_ul]:list-disc [&_ul]:pl-6 [&_li]:mb-1"
                             dangerouslySetInnerHTML={{ __html: markdownToHtml(insights) }} 
                         />
                     )}

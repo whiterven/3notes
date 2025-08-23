@@ -102,7 +102,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 
         <div className={`absolute top-3 right-3 flex gap-1.5 z-10 ${isStacking ? 'opacity-20' : ''}`} onClick={(e) => e.stopPropagation()}>
              <button onClick={() => onTogglePin(note.id)} disabled={isStacking} className="bg-amber-500/60 text-white rounded-full p-1.5 hover:bg-amber-500 transition-colors" aria-label="Pin note">
-                <PinIcon className="w-5 h-5" isFilled={note.isPinned} />
+                <PinIcon className="w-5 h-5" isFilled={note.is_pinned} />
             </button>
             <button onClick={() => onEdit(note.id)} disabled={isStacking} className="bg-amber-500/60 text-white rounded-full p-1.5 hover:bg-amber-500 transition-colors" aria-label="Edit note">
                 <EditIcon className="w-5 h-5"/>
@@ -118,22 +118,22 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             </button>
         )}
 
-        {note.isPinned && (
+        {note.is_pinned && (
             <div className="absolute top-4 left-3 z-0" title="Pinned note">
                  <PinIcon className="w-5 h-5 text-amber-600/50" isFilled={true} />
             </div>
         )}
 
         <div className={`flex-grow overflow-y-auto pr-2 thin-scrollbar space-y-3 ${isStacking ? 'opacity-20' : ''}`}>
-            {note.drawingUrl && (
+            {note.drawing_url && (
                 <div className="w-full h-40 rounded-md overflow-hidden shadow-inner border border-amber-200 bg-white">
-                    <img src={note.drawingUrl} alt="User drawing" className="w-full h-full object-contain" />
+                    <img src={note.drawing_url} alt="User drawing" className="w-full h-full object-contain" />
                 </div>
             )}
             
-            {note.imageUrl && (
+            {note.image_url && (
                 <div className="w-full h-40 rounded-md overflow-hidden shadow-inner border border-amber-200">
-                    <img src={note.imageUrl} alt="Note illustration" className="w-full h-full object-cover" />
+                    <img src={note.image_url} alt="Note illustration" className="w-full h-full object-cover" />
                 </div>
             )}
 
@@ -144,8 +144,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
               dangerouslySetInnerHTML={{ __html: note.text }}
             />
 
-            {note.audioUrl && (
-                <audio onClick={(e) => e.stopPropagation()} controls src={note.audioUrl} className="w-full h-10 custom-audio-player" aria-label="Audio player for note"></audio>
+            {note.audio_url && (
+                <audio onClick={(e) => e.stopPropagation()} controls src={note.audio_url} className="w-full h-10 custom-audio-player" aria-label="Audio player for note"></audio>
             )}
             
             {note.tags && note.tags.length > 0 && (
@@ -205,7 +205,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         </div>
 
         <div className={`mt-auto pt-2 grid grid-cols-2 gap-2 ${isStacking ? 'opacity-20' : ''}`} onClick={(e) => e.stopPropagation()}>
-            {note.audioUrl && (
+            {note.audio_url && (
                 <button
                     onClick={() => onTranscribe(note.id)}
                     disabled={isTranscribing || isStacking}

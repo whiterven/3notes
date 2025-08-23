@@ -15,8 +15,8 @@ const StackedNoteItem: React.FC<{note: Note, onUnstack: (id: string) => void, on
     
     return (
         <div className={`relative p-4 rounded-lg border flex flex-col gap-2 ${note.color} border-amber-300/50`}>
-            {note.imageUrl && <img src={note.imageUrl} alt="Note" className="rounded-md h-32 w-full object-cover"/>}
-            {note.drawingUrl && <img src={note.drawingUrl} alt="Drawing" className="rounded-md h-32 w-full object-contain bg-white"/>}
+            {note.image_url && <img src={note.image_url} alt="Note" className="rounded-md h-32 w-full object-cover"/>}
+            {note.drawing_url && <img src={note.drawing_url} alt="Drawing" className="rounded-md h-32 w-full object-contain bg-white"/>}
             <p className="text-amber-900 text-lg flex-grow">{plainText}{plainText.length === 100 ? '...' : ''}</p>
             <div className="flex items-center justify-end gap-2 mt-2">
                 <button 

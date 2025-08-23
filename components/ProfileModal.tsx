@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Note, UserProfile } from '../types';
-import { CloseIcon, ProfileIcon, Avatar1Icon, Avatar2Icon, Avatar3Icon, Avatar4Icon, FileTextIcon, TagIcon, ImageIcon, MicIcon, ImportIcon, ExportIcon, AlertTriangleIcon } from './icons';
+import { CloseIcon, ProfileIcon, Avatar1Icon, Avatar2Icon, Avatar3Icon, Avatar4Icon, FileTextIcon, TagIcon, ImageIcon, MicIcon, ImportIcon, ExportIcon, AlertTriangleIcon, LogOutIcon } from './icons';
 
 interface ProfileModalProps {
     notes: Note[];
@@ -10,6 +10,7 @@ interface ProfileModalProps {
     onImportClick: () => void;
     onExport: () => void;
     onDeleteAll: () => void;
+    onLogout: () => void;
 }
 
 const AVATARS = {
@@ -21,7 +22,7 @@ const AVATARS = {
 
 type AvatarKey = keyof typeof AVATARS;
 
-export const ProfileModal: React.FC<ProfileModalProps> = ({ notes, userProfile, onClose, onProfileUpdate, onImportClick, onExport, onDeleteAll }) => {
+export const ProfileModal: React.FC<ProfileModalProps> = ({ notes, userProfile, onClose, onProfileUpdate, onImportClick, onExport, onDeleteAll, onLogout }) => {
     const [name, setName] = useState(userProfile.name);
     const [selectedAvatar, setSelectedAvatar] = useState<AvatarKey>(userProfile.avatar as AvatarKey);
     
@@ -37,8 +38,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ notes, userProfile, 
 
         notes.forEach(note => {
             if (note.tags) note.tags.forEach(tag => tagSet.add(tag));
-            if (note.imageUrl) imageCount++;
-            if (note.audioUrl) audioCount++;
+            if (note.image_url) imageCount++;
+            if (note.audio_url) audioCount++;
         });
 
         return {
@@ -143,11 +144,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ notes, userProfile, 
                     </section>
                 </div>
 
-                <footer className="p-4 border-t border-amber-200 themed-modal-header flex-shrink-0 grid grid-cols-2 sm:flex sm:justify-end gap-3">
-                    <button type="button" onClick={onClose} className="w-full sm:w-auto text-amber-700 text-base sm:text-lg font-bold py-2.5 px-5 rounded-full hover:bg-amber-100 transition duration-300 themed-modal-button">Cancel</button>
-                    <button type="button" onClick={handleSave} className="w-full sm:w-auto bg-amber-700 text-white text-base sm:text-lg font-bold py-2.5 px-5 rounded-full hover:bg-amber-800 transition duration-300">
-                        Save Profile
+                <footer className="p-4 border-t border-amber-200 themed-modal-header flex-shrink-0 flex justify-between items-center gap-3">
+                    <button type="button" onClick={onLogout} className="flex items-center gap-2 text-red-600 text-base sm:text-lg font-bold py-2.5 px-5 rounded-full hover:bg-red-100 transition duration-300 themed-modal-button">
+                        <LogOutIcon className="w-5 h-5"/> Log Out
                     </button>
+                    <div className="flex sm:justify-end gap-3">
+                        <button type="button" onClick={onClose} className="w-full sm:w-auto text-amber-700 text-base sm:text-lg font-bold py-2.5 px-5 rounded-full hover:bg-amber-100 transition duration-300 themed-modal-button">Cancel</button>
+                        <button type="button" onClick={handleSave} className="w-full sm:w-auto bg-amber-700 text-white text-base sm:text-lg font-bold py-2.5 px-5 rounded-full hover:bg-amber-800 transition duration-300">
+                            Save Profile
+                        </button>
+                    </div>
                 </footer>
             </div>
         </div>

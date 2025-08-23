@@ -1,16 +1,18 @@
 export interface Note {
   id: string;
+  user_id: string;
+  created_at?: string;
   text: string;
-  imageUrl: string | null;
-  drawingUrl: string | null;
-  audioUrl: string | null;
+  image_url: string | null;
+  drawing_url: string | null;
+  audio_url: string | null;
   summary: string | null;
   color: string;
   tags: string[];
   tasks: string[] | null;
-  relatedNoteIds: string[] | null;
-  stackId: string | null;
-  isPinned?: boolean;
+  related_note_ids: string[] | null;
+  stack_id: string | null;
+  is_pinned?: boolean;
 }
 
 export type ToastType = 'error' | 'success';

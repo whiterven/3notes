@@ -12,36 +12,12 @@ import { InsightsModal } from './components/InsightsModal';
 import { StackViewModal } from './components/StackViewModal';
 import { ViewNoteModal } from './components/ViewNoteModal';
 import { ProfileModal } from './components/ProfileModal';
+import { supabase } from './services/supabaseClient';
+import { Auth } from './components/Auth';
+import type { Session } from '@supabase/supabase-js';
 
-const LOCAL_STORAGE_KEY = 'ai-3d-notes';
 const ENV_STORAGE_KEY = 'ai-3d-notes-env';
-const USER_PROFILE_STORAGE_KEY = 'ai-3d-notes-user-profile';
 const NOTE_COLORS = ['bg-amber-100', 'bg-sky-100', 'bg-lime-100', 'bg-rose-100', 'bg-violet-100', 'bg-white'];
-
-
-const getInitialNotes = (): Note[] => {
-    try {
-        const savedNotes = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (savedNotes) {
-            const parsedNotes = JSON.parse(savedNotes);
-            if (Array.isArray(parsedNotes)) {
-                // Add default fields to old notes for backwards compatibility
-                return parsedNotes.map(note => ({ 
-                    ...note, 
-                    tags: note.tags || [], 
-                    drawingUrl: note.drawingUrl || null,
-                    tasks: note.tasks || null,
-                    relatedNoteIds: note.relatedNoteIds || null,
-                    stackId: note.stackId || null,
-                    isPinned: note.isPinned || false,
-                }));
-            }
-        }
-    } catch (error) {
-        console.error("Could not load notes from local storage", error);
-    }
-    return []; 
-};
 
 const getInitialEnv = (): Environment => {
     try {
@@ -55,21 +31,10 @@ const getInitialEnv = (): Environment => {
     return 'default';
 };
 
-const getInitialProfile = (): UserProfile => {
-    try {
-        const savedProfile = window.localStorage.getItem(USER_PROFILE_STORAGE_KEY);
-        if (savedProfile) {
-            return JSON.parse(savedProfile);
-        }
-    } catch (error) {
-        console.error("Could not load user profile from local storage", error);
-    }
-    return { name: 'Explorer', avatar: 'avatar1' };
-};
-
 const App: React.FC = () => {
-  const [notes, setNotes] = useState<Note[]>(getInitialNotes);
-  const [userProfile, setUserProfile] = useState<UserProfile>(getInitialProfile);
+  const [session, setSession] = useState<Session | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile>({ name: 'Explorer', avatar: 'avatar1' });
   const [isLoadingSummary, setIsLoadingSummary] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState<string | null>(null);
   const [isExtractingTasks, setIsExtractingTasks] = useState<string | null>(null);
@@ -91,13 +56,69 @@ const App: React.FC = () => {
   const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    try {
-        window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(notes));
-    } catch (error) {
-        console.error("Could not save notes to local storage", error);
-        showToast("Error: Could not save notes.");
-    }
-  }, [notes]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const showToast = (message: string, type: ToastType = 'error') => {
+    setToast({ message, type });
+  };
+  
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (session?.user) {
+        // Fetch Profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = no rows found
+          console.error('Error fetching profile:', profileError);
+          showToast('Could not fetch your profile.');
+        } else if (profileData) {
+          setUserProfile({ name: profileData.name, avatar: profileData.avatar });
+        } else {
+            // If no profile, create one with default values
+            const { error: insertError } = await supabase.from('profiles').insert({
+                id: session.user.id,
+                name: 'Explorer',
+                avatar: 'avatar1',
+            });
+            if(insertError) console.error('Error creating profile:', insertError);
+        }
+
+        // Fetch Notes
+        const { data: notesData, error: notesError } = await supabase
+          .from('notes')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (notesError) {
+          console.error('Error fetching notes:', notesError);
+          showToast('Could not fetch your notes.');
+        } else {
+          setNotes(notesData || []);
+        }
+      } else {
+        // User logged out, clear data
+        setNotes([]);
+        setUserProfile({ name: 'Explorer', avatar: 'avatar1' });
+      }
+    };
+
+    fetchUserData();
+  }, [session]);
   
   useEffect(() => {
     try {
@@ -106,15 +127,6 @@ const App: React.FC = () => {
         console.error("Could not save environment to local storage", error);
     }
   }, [environment]);
-
-  useEffect(() => {
-    try {
-        window.localStorage.setItem(USER_PROFILE_STORAGE_KEY, JSON.stringify(userProfile));
-    } catch (error) {
-        console.error("Could not save user profile to local storage", error);
-    }
-  }, [userProfile]);
-
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -143,89 +155,122 @@ const App: React.FC = () => {
 
     // Sort to bring pinned notes to the front
     return filtered.sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
+        if (a.is_pinned && !b.is_pinned) return -1;
+        if (!a.is_pinned && b.is_pinned) return 1;
         return 0; // maintain original order for notes with same pinned status
     });
   }, [notes, searchTerm, activeTags]);
   
   const carouselNotes = useMemo(() => {
-    return filteredNotes.filter(note => !note.stackId);
+    return filteredNotes.filter(note => !note.stack_id);
   }, [filteredNotes]);
   
   const notesInStack = useMemo(() => {
     if (!viewingStack) return [];
-    return filteredNotes.filter(note => note.stackId === viewingStack.id);
+    return filteredNotes.filter(note => note.stack_id === viewingStack.id);
   }, [filteredNotes, viewingStack]);
 
   useEffect(() => {
     setActiveIndex(0);
   }, [carouselNotes.length]);
 
+  const handleSaveNote = async (noteData: Omit<Note, 'id' | 'summary' | 'tasks' | 'related_note_ids' | 'user_id' | 'created_at'>, id?: string) => {
+    if (!session?.user) {
+        showToast("You must be logged in to save notes.");
+        return;
+    }
 
-  const showToast = (message: string, type: ToastType = 'error') => {
-    setToast({ message, type });
-  };
-
-  const handleSaveNote = (noteData: Omit<Note, 'id' | 'summary' | 'tasks' | 'relatedNoteIds'>, id?: string) => {
     if (id) {
-        setNotes(prevNotes => 
-            prevNotes.map(n => (n.id === id ? { ...n, ...noteData, tags: noteData.tags || [] } : n))
-        );
+        const { data, error } = await supabase
+            .from('notes')
+            .update({ ...noteData, tags: noteData.tags || [] })
+            .eq('id', id)
+            .select()
+            .single();
+        
+        if (error) {
+            showToast(`Error updating note: ${error.message}`);
+        } else if (data) {
+            setNotes(prevNotes => prevNotes.map(n => (n.id === id ? data : n)));
+        }
     } else {
-        const newNote: Note = {
+        const newNotePayload = {
             ...noteData,
-            id: `note-${Date.now()}`,
+            user_id: session.user.id,
             summary: null,
             tags: noteData.tags || [],
             tasks: null,
-            relatedNoteIds: null,
-            isPinned: false,
+            related_note_ids: null,
+            is_pinned: false,
         };
-        setNotes(prevNotes => [newNote, ...prevNotes]);
+        const { data, error } = await supabase
+            .from('notes')
+            .insert(newNotePayload)
+            .select()
+            .single();
+        
+        if (error) {
+            showToast(`Error creating note: ${error.message}`);
+        } else if (data) {
+            setNotes(prevNotes => [data, ...prevNotes]);
+        }
     }
     setIsFormVisible(false);
     setEditingNote(null);
   };
   
-  const handleAiCreateNote = (noteData: { text: string; tags: string[] }) => {
-    const newNote: Note = {
-      id: `note-${Date.now()}`,
-      text: noteData.text,
-      tags: noteData.tags || [],
-      color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
-      imageUrl: null,
-      drawingUrl: null,
-      audioUrl: null,
-      summary: null,
-      tasks: null,
-      relatedNoteIds: null,
-      stackId: null,
-      isPinned: false,
+  const handleAiCreateNote = async (noteData: { text: string; tags: string[] }) => {
+    if (!session?.user) return showToast("You must be logged in.");
+
+    const newNotePayload = {
+        user_id: session.user.id,
+        text: noteData.text,
+        tags: noteData.tags || [],
+        color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
+        image_url: null,
+        drawing_url: null,
+        audio_url: null,
+        stack_id: null,
+        summary: null,
+        tasks: null,
+        related_note_ids: null,
+        is_pinned: false,
     };
-    setNotes(prevNotes => [newNote, ...prevNotes]);
-    showToast("AI created a new note for you!", "success");
+
+    const { data, error } = await supabase.from('notes').insert(newNotePayload).select().single();
+    if (error) {
+        showToast(`AI failed to save note: ${error.message}`);
+    } else if (data) {
+        setNotes(prevNotes => [data, ...prevNotes]);
+        showToast("AI created a new note for you!", "success");
+    }
   };
   
-  const handleAiUpdateNote = (updateData: { id: string; text?: string; tags?: string[]; color?: string }) => {
-    setNotes(prevNotes =>
-        prevNotes.map(n => {
-            if (n.id === updateData.id) {
-                return {
-                    ...n,
-                    text: updateData.text ?? n.text,
-                    tags: updateData.tags ?? n.tags,
-                    color: updateData.color ?? n.color,
-                };
-            }
-            return n;
-        })
-    );
-    showToast("AI has updated the note!", "success");
+  const handleAiUpdateNote = async (updateData: { id: string; text?: string; tags?: string[]; color?: string }) => {
+    const { id, ...updatePayload } = updateData;
+    const { data, error } = await supabase
+        .from('notes')
+        .update(updatePayload)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) {
+        showToast(`AI failed to update note: ${error.message}`);
+    } else if (data) {
+        setNotes(prev => prev.map(n => n.id === id ? data : n));
+        showToast("AI has updated the note!", "success");
+    }
   };
 
-  const deleteNote = (id: string) => {
-    setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
+  const deleteNote = async (id: string) => {
+    const originalNotes = [...notes];
+    setNotes(prevNotes => prevNotes.filter(note => note.id !== id)); // Optimistic delete
+    const { error } = await supabase.from('notes').delete().eq('id', id);
+    if (error) {
+        showToast(`Error deleting note: ${error.message}`);
+        setNotes(originalNotes); // Revert on failure
+    }
   };
 
   const handleEditNote = (id: string) => {
@@ -247,6 +292,22 @@ const App: React.FC = () => {
     setIsFormVisible(true);
   };
 
+  const updateNoteInDbAndState = async (id: string, update: Partial<Note>) => {
+      const { data, error } = await supabase
+        .from('notes')
+        .update(update)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+          throw new Error(error.message);
+      }
+      if (data) {
+          setNotes(prev => prev.map(n => (n.id === id ? data : n)));
+      }
+  };
+
   const handleSummarize = async (id: string) => {
     const noteToSummarize = notes.find(n => n.id === id);
     if (!noteToSummarize || !noteToSummarize.text) {
@@ -261,9 +322,7 @@ const App: React.FC = () => {
         const plainText = tempDiv.textContent || tempDiv.innerText || "";
         
         const summary = await summarizeText(plainText);
-        setNotes(prevNotes =>
-            prevNotes.map(n => (n.id === id ? { ...n, summary } : n))
-        );
+        await updateNoteInDbAndState(id, { summary });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
         showToast(`Could not summarize. ${errorMessage}`);
@@ -274,21 +333,16 @@ const App: React.FC = () => {
 
   const handleTranscribe = async (id: string) => {
     const noteToTranscribe = notes.find(n => n.id === id);
-    if (!noteToTranscribe || !noteToTranscribe.audioUrl) {
+    if (!noteToTranscribe || !noteToTranscribe.audio_url) {
         showToast("Note has no audio to transcribe.");
         return;
     }
 
     setIsTranscribing(id);
     try {
-        const transcribedText = await transcribeAudio(noteToTranscribe.audioUrl);
-        setNotes(prevNotes =>
-            prevNotes.map(n =>
-                n.id === id
-                    ? { ...n, text: n.text ? `${n.text}<p>${transcribedText}</p>` : `<p>${transcribedText}</p>` }
-                    : n
-            )
-        );
+        const transcribedText = await transcribeAudio(noteToTranscribe.audio_url);
+        const newText = noteToTranscribe.text ? `${noteToTranscribe.text}<p>${transcribedText}</p>` : `<p>${transcribedText}</p>`;
+        await updateNoteInDbAndState(id, { text: newText });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
         showToast(`Could not transcribe. ${errorMessage}`);
@@ -309,7 +363,7 @@ const App: React.FC = () => {
         tempDiv.innerHTML = note.text;
         const plainText = tempDiv.textContent || tempDiv.innerText || "";
         const tasks = await extractTasks(plainText);
-        setNotes(prev => prev.map(n => n.id === id ? { ...n, tasks } : n));
+        await updateNoteInDbAndState(id, { tasks });
         if (tasks.length > 0) {
             showToast("Tasks found!", "success");
         } else {
@@ -328,9 +382,9 @@ const App: React.FC = () => {
       if (!note) return;
       setIsFindingLinks(id);
       try {
-          const relatedNoteIds = await findRelatedNotes(note, notes);
-          setNotes(prev => prev.map(n => n.id === id ? { ...n, relatedNoteIds } : n));
-          if (relatedNoteIds.length > 0) {
+          const related_note_ids = await findRelatedNotes(note, notes);
+          await updateNoteInDbAndState(id, { related_note_ids });
+          if (related_note_ids.length > 0) {
               showToast("Related notes found!", "success");
           } else {
               showToast("No related notes found.", "success");
@@ -355,7 +409,8 @@ const App: React.FC = () => {
         tempDiv.innerHTML = note.text;
         const plainText = tempDiv.textContent || tempDiv.innerText || "";
         const expandedText = await expandNoteText(plainText);
-        setNotes(prev => prev.map(n => n.id === id ? { ...n, text: `${n.text}<hr class="my-4 border-amber-300"><h3 class="text-xl font-bold text-amber-800">AI Expansion:</h3>${expandedText}` } : n));
+        const newText = `${note.text}<hr class="my-4 border-amber-300"><h3 class="text-xl font-bold text-amber-800">AI Expansion:</h3>${expandedText}`;
+        await updateNoteInDbAndState(id, { text: newText });
         showToast("Note expanded!", "success");
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
@@ -380,10 +435,10 @@ const App: React.FC = () => {
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !session?.user) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
         try {
             const text = e.target?.result;
             if (typeof text !== 'string') throw new Error("File could not be read.");
@@ -391,33 +446,36 @@ const App: React.FC = () => {
             const importedNotes = JSON.parse(text);
             if (!Array.isArray(importedNotes)) throw new Error("Invalid format: Not an array.");
 
-            // Basic validation of notes
-            const validNotes = importedNotes.filter(n => n.id && typeof n.text !== 'undefined');
+            const validNotes: Note[] = importedNotes.filter(n => n.id && typeof n.text !== 'undefined');
             const newNotes = validNotes.map(n => ({
                 ...n,
-                isPinned: n.isPinned || false, // Ensure defaults
+                is_pinned: n.is_pinned || false,
                 tags: n.tags || [],
             }));
 
-            // Merge imported notes with existing notes, avoiding duplicates by ID
-            setNotes(prev => {
-                const existingIds = new Set(prev.map(n => n.id));
-                const uniqueNewNotes = newNotes.filter(n => !existingIds.has(n.id));
+            const existingIds = new Set(notes.map(n => n.id));
+            const uniqueNewNotes = newNotes
+                .filter(n => !existingIds.has(n.id))
+                .map(n => ({...n, user_id: session.user?.id }));
+            
+            if (uniqueNewNotes.length === 0) {
+                showToast("No new notes to import.", "success");
+                return;
+            }
 
-                if (uniqueNewNotes.length === 0) {
-                    showToast("No new notes to import.", "success");
-                    return prev; // No changes
-                }
+            const { error } = await supabase.from('notes').insert(uniqueNewNotes as any);
 
-                showToast(`${uniqueNewNotes.length} notes imported successfully!`, "success");
-                return [...uniqueNewNotes, ...prev];
-            });
+            if (error) {
+                throw new Error(error.message);
+            }
+
+            setNotes(prev => [...uniqueNewNotes as Note[], ...prev]);
+            showToast(`${uniqueNewNotes.length} notes imported successfully!`, "success");
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
             showToast(`Import failed: ${errorMessage}`);
         } finally {
-            // Reset file input
             if (importInputRef.current) {
                 importInputRef.current.value = "";
             }
@@ -448,38 +506,75 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDeleteAllNotes = () => {
+  const handleDeleteAllNotes = async () => {
     if(window.confirm("Are you sure you want to delete ALL notes? This action cannot be undone.")) {
-        setNotes([]);
-        showToast("All notes have been deleted.", "success");
+        if (!session?.user) return;
+        const { error } = await supabase.from('notes').delete().eq('user_id', session.user.id);
+        if (error) {
+            showToast(`Error deleting notes: ${error.message}`);
+        } else {
+            setNotes([]);
+            showToast("All notes have been deleted.", "success");
+        }
     }
   };
 
-  const handleProfileUpdate = (newProfile: UserProfile) => {
-    setUserProfile(newProfile);
-    showToast("Profile updated successfully!", "success");
+  const handleProfileUpdate = async (newProfile: UserProfile) => {
+    if (!session?.user) return;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ name: newProfile.name, avatar: newProfile.avatar, updated_at: new Date() })
+      .eq('id', session.user.id);
+
+    if (error) {
+      showToast(`Error updating profile: ${error.message}`);
+    } else {
+      setUserProfile(newProfile);
+      showToast("Profile updated successfully!", "success");
+    }
+  };
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        showToast(`Logout failed: ${error.message}`);
+    } else {
+        setIsProfileVisible(false);
+    }
   };
 
   const handleStartStack = (id: string) => {
     setStackingNoteId(current => (current === id ? null : id));
   };
   
-  const handleFinishStack = (targetId: string) => {
+  const handleFinishStack = async (targetId: string) => {
     if (!stackingNoteId || stackingNoteId === targetId) return;
-    setNotes(prev => prev.map(n => (n.id === stackingNoteId ? { ...n, stackId: targetId } : n)));
-    setStackingNoteId(null);
-    showToast("Notes stacked successfully!", "success");
+    try {
+        await updateNoteInDbAndState(stackingNoteId, { stack_id: targetId });
+        setStackingNoteId(null);
+        showToast("Notes stacked successfully!", "success");
+    } catch (error: any) {
+        showToast(`Error stacking note: ${error.message}`);
+    }
   };
 
-  const handleTogglePin = (id: string) => {
-    setNotes(prev =>
-      prev.map(n => (n.id === id ? { ...n, isPinned: !n.isPinned } : n))
-    );
+  const handleTogglePin = async (id: string) => {
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    try {
+      await updateNoteInDbAndState(id, { is_pinned: !note.is_pinned });
+    } catch (error: any) {
+      showToast(`Error pinning note: ${error.message}`);
+    }
   };
   
-  const handleUnstackNote = (id: string) => {
-    setNotes(prev => prev.map(n => (n.id === id ? { ...n, stackId: null } : n)));
-    showToast("Note unstacked!", "success");
+  const handleUnstackNote = async (id: string) => {
+    try {
+        await updateNoteInDbAndState(id, { stack_id: null });
+        showToast("Note unstacked!", "success");
+    } catch (error: any) {
+        showToast(`Error unstacking note: ${error.message}`);
+    }
   };
 
   const toggleTagFilter = (tag: string) => {
@@ -497,10 +592,12 @@ const App: React.FC = () => {
     setSearchTerm('');
   };
 
-  const handleTextUpdate = (noteId: string, newText: string) => {
-    setNotes(prevNotes =>
-      prevNotes.map(n => (n.id === noteId ? { ...n, text: newText } : n))
-    );
+  const handleTextUpdate = async (noteId: string, newText: string) => {
+    try {
+        await updateNoteInDbAndState(noteId, { text: newText });
+    } catch (error: any) {
+        showToast(`Error saving update: ${error.message}`);
+    }
   };
 
   const goNext = () => {
@@ -513,6 +610,10 @@ const App: React.FC = () => {
 
   const envClass = `env-${environment}`;
   const isDarkTheme = environment === 'library' || environment === 'scifi';
+
+  if (!session) {
+    return <Auth />;
+  }
 
   return (
     <div className={`min-h-screen w-full text-amber-900 font-handwritten selection:bg-amber-400/50 flex flex-col transition-colors duration-500 ${envClass} ${isDarkTheme ? 'dark' : ''}`}>
@@ -590,11 +691,11 @@ const App: React.FC = () => {
                         const zIndex = 100 - Math.abs(offset);
                         const pointerEvents = offset === 0 ? 'auto' : 'none';
 
-                        const relatedNotes = (note.relatedNoteIds || [])
+                        const relatedNotes = (note.related_note_ids || [])
                             .map(id => notes.find(n => n.id === id))
                             .filter((n): n is Note => !!n);
                             
-                        const stackedNotes = filteredNotes.filter(n => n.stackId === note.id);
+                        const stackedNotes = filteredNotes.filter(n => n.stack_id === note.id);
 
                         return (
                             <div
@@ -703,6 +804,7 @@ const App: React.FC = () => {
             onImportClick={handleImportClick}
             onExport={handleExport}
             onDeleteAll={handleDeleteAllNotes}
+            onLogout={handleLogout}
           />
       )}
 

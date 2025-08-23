@@ -3,11 +3,23 @@ import type { Note } from '../types';
 
 const API_KEY = process.env.API_KEY;
 
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
+let ai: GoogleGenAI | null = null;
+
+if (API_KEY) {
+  ai = new GoogleGenAI({ apiKey: API_KEY });
+} else {
+  // This warning will be visible in the developer console.
+  console.warn("API_KEY environment variable for Gemini is not set. AI features will be disabled.");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Helper function to ensure the AI client is available before making a call.
+const getAiClient = (): GoogleGenAI => {
+    if (!ai) {
+        throw new Error("AI features are disabled. API_KEY is not configured.");
+    }
+    return ai;
+}
+
 
 const blobToBase64 = (blob: Blob): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -24,7 +36,8 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
 
 export async function summarizeText(text: string): Promise<string> {
     try {
-        const response = await ai.models.generateContent({
+        const aiClient = getAiClient();
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: `Summarize the following note in one short, concise sentence: "${text}"`,
             config: {
@@ -34,13 +47,15 @@ export async function summarizeText(text: string): Promise<string> {
         return response.text.trim();
     } catch (error) {
         console.error("Error summarizing text:", error);
+        if (error instanceof Error && error.message.includes("API_KEY")) throw error;
         throw new Error("Failed to connect with the AI for summarization.");
     }
 }
 
 export async function generateImage(prompt: string): Promise<string> {
     try {
-        const response = await ai.models.generateImages({
+        const aiClient = getAiClient();
+        const response = await aiClient.models.generateImages({
             model: 'imagen-3.0-generate-002',
             prompt: prompt,
             config: {
@@ -58,13 +73,15 @@ export async function generateImage(prompt: string): Promise<string> {
         }
     } catch (error) {
         console.error("Error generating image:", error);
+        if (error instanceof Error && error.message.includes("API_KEY")) throw error;
         throw new Error("Failed to connect with the AI for image generation.");
     }
 }
 
 export async function generateImagePrompt(text: string): Promise<string> {
     try {
-        const response = await ai.models.generateContent({
+        const aiClient = getAiClient();
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: `Based on the following note, create a short, creative, and visually descriptive prompt for an image generation AI. The prompt should be a single, concise sentence, suitable for a model like Imagen. Do not add quotes or labels. Note: "${text}"`,
             config: {
@@ -74,12 +91,14 @@ export async function generateImagePrompt(text: string): Promise<string> {
         return response.text.trim();
     } catch (error) {
         console.error("Error generating image prompt:", error);
+        if (error instanceof Error && error.message.includes("API_KEY")) throw error;
         throw new Error("Failed to connect with the AI for prompt suggestion.");
     }
 }
 
 export async function transcribeAudio(audioUrl: string): Promise<string> {
     try {
+        const aiClient = getAiClient();
         const audioBlob = await fetch(audioUrl).then(res => res.blob());
         if (audioBlob.size === 0) {
             throw new Error("Audio blob is empty.");
@@ -97,7 +116,7 @@ export async function transcribeAudio(audioUrl: string): Promise<string> {
             text: 'Transcribe this audio recording into text.',
         };
 
-        const response = await ai.models.generateContent({
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: { parts: [audioPart, textPart] },
         });
@@ -105,6 +124,7 @@ export async function transcribeAudio(audioUrl: string): Promise<string> {
         return response.text.trim();
     } catch (error) {
         console.error("Error transcribing audio:", error);
+        if (error instanceof Error && error.message.includes("API_KEY")) throw error;
         throw new Error("Failed to connect with the AI for transcription.");
     }
 }
@@ -112,7 +132,8 @@ export async function transcribeAudio(audioUrl: string): Promise<string> {
 
 export async function extractTasks(text: string): Promise<string[]> {
     try {
-        const response = await ai.models.generateContent({
+        const aiClient = getAiClient();
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: `Analyze the following note and extract any action items or tasks. If there are no tasks, return an empty array. Note: "${text}"`,
             config: {
@@ -133,11 +154,13 @@ export async function extractTasks(text: string): Promise<string[]> {
         return result.tasks || [];
     } catch (error) {
         console.error("Error extracting tasks:", error);
+        if (error instanceof Error && error.message.includes("API_KEY")) throw error;
         throw new Error("Failed to connect with the AI for task extraction.");
     }
 }
 
 export async function findRelatedNotes(currentNote: Note, allNotes: Note[]): Promise<string[]> {
+    const aiClient = getAiClient();
     const otherNotes = allNotes
         .filter(n => n.id !== currentNote.id)
         .map(n => ({ 
@@ -163,7 +186,7 @@ export async function findRelatedNotes(currentNote: Note, allNotes: Note[]): Pro
     `;
     
     try {
-        const response = await ai.models.generateContent({
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: context,
             config: {
@@ -184,13 +207,15 @@ export async function findRelatedNotes(currentNote: Note, allNotes: Note[]): Pro
         return result.relatedNoteIds || [];
     } catch (error) {
         console.error("Error finding related notes:", error);
+        if (error instanceof Error && error.message.includes("API_KEY")) throw error;
         throw new Error("Failed to connect with the AI to find related notes.");
     }
 }
 
 export async function expandNoteText(text: string): Promise<string> {
     try {
-        const response = await ai.models.generateContent({
+        const aiClient = getAiClient();
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: `The following is a user's note. Expand on this idea, adding more details, potential features, target audiences, or related concepts. Format the output as clean HTML using <p>, <ul>, <li>, <strong>, and <em> tags. Do not include <html> or <body> tags. Note: "${text}"`,
             config: {
@@ -200,11 +225,13 @@ export async function expandNoteText(text: string): Promise<string> {
         return response.text.trim();
     } catch (error) {
         console.error("Error expanding note text:", error);
+        if (error instanceof Error && error.message.includes("API_KEY")) throw error;
         throw new Error("Failed to connect with the AI for note expansion.");
     }
 }
 
 export async function generateInsights(allNotes: Note[]): Promise<string> {
+    const aiClient = getAiClient();
     const notesContext = allNotes.map(note => {
         const textContent = (note.text || "").replace(/<[^>]*>?/gm, ' ').substring(0, 500);
         return `
@@ -221,7 +248,7 @@ export async function generateInsights(allNotes: Note[]): Promise<string> {
     const prompt = `As an AI analyst, review the following collection of notes. Identify emerging themes, surprising connections between different notes, and potential action items that span across multiple ideas. Present your findings as a concise summary. Use markdown for formatting (e.g., headings, bold text, bullet points). \n\nNotes:\n${notesContext}`;
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
              config: {
@@ -231,6 +258,7 @@ export async function generateInsights(allNotes: Note[]): Promise<string> {
         return response.text.trim();
     } catch (error) {
         console.error("Error generating insights:", error);
+        if (error instanceof Error && error.message.includes("API_KEY")) throw error;
         throw new Error("Failed to connect with the AI to generate insights.");
     }
 }
@@ -249,6 +277,7 @@ export interface AiResponse {
 }
 
 export async function queryNotes(query: string, allNotes: Note[], useWebSearch: boolean, chatHistory: Content[]): Promise<AiResponse> {
+     const aiClient = getAiClient();
      if (useWebSearch) {
         try {
             const contents: Content[] = [
@@ -259,7 +288,7 @@ export async function queryNotes(query: string, allNotes: Note[], useWebSearch: 
                 }
             ];
 
-            const response = await ai.models.generateContent({
+            const response = await aiClient.models.generateContent({
                model: "gemini-2.5-flash",
                contents: contents,
                config: {
@@ -275,6 +304,7 @@ export async function queryNotes(query: string, allNotes: Note[], useWebSearch: 
 
         } catch (error) {
             console.error("Error querying with web search:", error);
+            if (error instanceof Error && error.message.includes("API_KEY")) throw error;
             throw new Error("Failed to get a response from the AI assistant with web search.");
         }
     }
@@ -354,7 +384,7 @@ export async function queryNotes(query: string, allNotes: Note[], useWebSearch: 
     ];
 
     try {
-        const response = await ai.models.generateContent({
+        const response = await aiClient.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: contents,
             config: {
@@ -403,6 +433,7 @@ export async function queryNotes(query: string, allNotes: Note[], useWebSearch: 
         };
     } catch (error) {
         console.error("Error querying notes:", error);
+        if (error instanceof Error && error.message.includes("API_KEY")) throw error;
         throw new Error("Failed to get a response from the AI assistant.");
     }
 }

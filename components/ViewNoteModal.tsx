@@ -9,7 +9,7 @@ interface ViewNoteModalProps {
 }
 
 export const ViewNoteModal: React.FC<ViewNoteModalProps> = ({ note, onClose, onEdit }) => {
-    const noteHasIcons = note.imageUrl || note.drawingUrl || note.audioUrl;
+    const noteHasIcons = note.image_url || note.drawing_url || note.audio_url;
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4" aria-modal="true">
@@ -18,9 +18,9 @@ export const ViewNoteModal: React.FC<ViewNoteModalProps> = ({ note, onClose, onE
                     <div className="flex items-center gap-3">
                         {noteHasIcons ? (
                             <>
-                                {note.imageUrl && <ImageIcon className="w-8 h-8 text-amber-700 themed-modal-text" />}
-                                {note.drawingUrl && <PencilIcon className="w-8 h-8 text-amber-700 themed-modal-text" />}
-                                {note.audioUrl && <MicIcon className="w-8 h-8 text-amber-700 themed-modal-text" />}
+                                {note.image_url && <ImageIcon className="w-8 h-8 text-amber-700 themed-modal-text" />}
+                                {note.drawing_url && <PencilIcon className="w-8 h-8 text-amber-700 themed-modal-text" />}
+                                {note.audio_url && <MicIcon className="w-8 h-8 text-amber-700 themed-modal-text" />}
                             </>
                         ) : <div className={`w-8 h-8 rounded-md ${note.color} border border-black/10`}></div>}
                         <h2 className="text-2xl sm:text-3xl text-amber-800 themed-modal-text">View Note</h2>
@@ -40,15 +40,15 @@ export const ViewNoteModal: React.FC<ViewNoteModalProps> = ({ note, onClose, onE
                 </header>
 
                 <div className="space-y-4 overflow-y-auto thin-scrollbar pr-2 -mr-2">
-                    {note.drawingUrl && (
+                    {note.drawing_url && (
                         <div className="w-full rounded-md overflow-hidden shadow-inner border border-amber-200 bg-white">
-                            <img src={note.drawingUrl} alt="User drawing" className="w-full h-auto max-h-64 sm:max-h-96 object-contain" />
+                            <img src={note.drawing_url} alt="User drawing" className="w-full h-auto max-h-64 sm:max-h-96 object-contain" />
                         </div>
                     )}
                     
-                    {note.imageUrl && (
+                    {note.image_url && (
                         <div className="w-full rounded-md overflow-hidden shadow-inner border border-amber-200">
-                            <img src={note.imageUrl} alt="Note illustration" className="w-full h-auto max-h-64 sm:max-h-96 object-cover" />
+                            <img src={note.image_url} alt="Note illustration" className="w-full h-auto max-h-64 sm:max-h-96 object-cover" />
                         </div>
                     )}
 
@@ -57,10 +57,10 @@ export const ViewNoteModal: React.FC<ViewNoteModalProps> = ({ note, onClose, onE
                       dangerouslySetInnerHTML={{ __html: note.text }}
                     />
 
-                    {note.audioUrl && (
+                    {note.audio_url && (
                         <div className="pt-2">
                             <h3 className="text-xl font-bold text-amber-800 mb-2 themed-modal-text">Audio Recording</h3>
-                            <audio controls src={note.audioUrl} className="w-full h-12 custom-audio-player" aria-label="Audio player for note"></audio>
+                            <audio controls src={note.audio_url} className="w-full h-12 custom-audio-player" aria-label="Audio player for note"></audio>
                         </div>
                     )}
 

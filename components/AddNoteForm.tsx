@@ -103,7 +103,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ initialDrawing, onSave, o
 
 
 interface NoteFormProps {
-  onSave: (note: Omit<Note, 'id' | 'summary' | 'tasks' | 'relatedNoteIds'>, id?: string) => void;
+  onSave: (note: Omit<Note, 'id' | 'summary' | 'tasks' | 'related_note_ids' | 'user_id' | 'created_at'>, id?: string) => void;
   onClose: () => void;
   noteToEdit: Note | null;
   showToast: (message: string, type?: ToastType) => void;
@@ -112,12 +112,13 @@ interface NoteFormProps {
 const NOTE_COLORS = ['bg-amber-100', 'bg-sky-100', 'bg-lime-100', 'bg-rose-100', 'bg-violet-100', 'bg-white'];
 
 export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEdit, showToast }) => {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [drawingUrl, setDrawingUrl] = useState<string | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [image_url, setImageUrl] = useState<string | null>(null);
+  const [drawing_url, setDrawingUrl] = useState<string | null>(null);
+  const [audio_url, setAudioUrl] = useState<string | null>(null);
   const [color, setColor] = useState(NOTE_COLORS[0]);
   const [tags, setTags] = useState<string[]>([]);
-  const [stackId, setStackId] = useState<string | null>(null);
+  const [stack_id, setStackId] = useState<string | null>(null);
+  const [is_pinned, setIsPinned] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [imagePrompt, setImagePrompt] = useState('');
   const [showImageGenerator, setShowImageGenerator] = useState(false);
@@ -132,12 +133,13 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
       if (editorRef.current) {
         editorRef.current.innerHTML = noteToEdit.text;
       }
-      setImageUrl(noteToEdit.imageUrl);
-      setDrawingUrl(noteToEdit.drawingUrl);
-      setAudioUrl(noteToEdit.audioUrl);
+      setImageUrl(noteToEdit.image_url);
+      setDrawingUrl(noteToEdit.drawing_url);
+      setAudioUrl(noteToEdit.audio_url);
       setColor(noteToEdit.color);
       setTags(noteToEdit.tags || []);
-      setStackId(noteToEdit.stackId || null);
+      setStackId(noteToEdit.stack_id || null);
+      setIsPinned(noteToEdit.is_pinned || false);
     }
      if (editorRef.current) editorRef.current.focus();
   }, [noteToEdit]);
@@ -210,11 +212,11 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const text = editorRef.current?.innerHTML || '';
-    if (!text && !imageUrl && !audioUrl && !drawingUrl) {
+    if (!text && !image_url && !audio_url && !drawing_url) {
         showToast("Please add some content to your note.");
         return;
     }
-    onSave({ text, imageUrl, drawingUrl, audioUrl, color, tags, stackId }, noteToEdit?.id);
+    onSave({ text, image_url, drawing_url, audio_url, color, tags, stack_id, is_pinned }, noteToEdit?.id);
     onClose();
   };
 
@@ -244,23 +246,23 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
           
            <div className="space-y-3 pt-2">
               <div className="flex flex-wrap items-start gap-3 sm:gap-4">
-                  {imageUrl && (
+                  {image_url && (
                       <div className="relative group">
-                          <img src={imageUrl} alt="Generated preview" className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-amber-200" />
+                          <img src={image_url} alt="Generated preview" className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-amber-200" />
                           <button type="button" onClick={() => setImageUrl(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100" aria-label="Remove image">
                               <CloseIcon className="w-4 h-4" />
                           </button>
                       </div>
                   )}
-                  {drawingUrl && (
+                  {drawing_url && (
                       <div className="relative group">
-                          <img src={drawingUrl} alt="Drawing preview" className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-amber-200 bg-white" />
+                          <img src={drawing_url} alt="Drawing preview" className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-lg border-2 border-amber-200 bg-white" />
                           <button type="button" onClick={() => setDrawingUrl(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100" aria-label="Remove drawing">
                               <CloseIcon className="w-4 h-4" />
                           </button>
                       </div>
                   )}
-                  {audioUrl && (
+                  {audio_url && (
                       <div className="relative group flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-amber-100 rounded-lg border-2 border-amber-200 p-2 text-center">
                           <MicIcon className="w-7 h-7 sm:w-8 sm:h-8 text-amber-700 mb-2"/>
                           <p className="text-xs sm:text-sm text-amber-800">Audio Attached</p>
@@ -270,7 +272,7 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
                       </div>
                   )}
               </div>
-              {stackId && (
+              {stack_id && (
                   <button onClick={handleUnstack} className="flex items-center gap-2 bg-rose-100 text-rose-700 px-2 py-1 rounded-md hover:bg-rose-200 text-base">
                       <LayersIcon className="w-5 h-5" /> Note is stacked. Click to unstack.
                   </button>
@@ -292,7 +294,7 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
           )}
 
           {showAudioRecorder && <AudioRecorder onRecordingComplete={(url) => { setAudioUrl(url); setShowAudioRecorder(false); }} showToast={showToast} />}
-          {isDrawing && <DrawingCanvas initialDrawing={drawingUrl} onSave={(data) => { setDrawingUrl(data); setIsDrawing(false); }} onClose={() => setIsDrawing(false)} />}
+          {isDrawing && <DrawingCanvas initialDrawing={drawing_url} onSave={(data) => { setDrawingUrl(data); setIsDrawing(false); }} onClose={() => setIsDrawing(false)} />}
 
           <div className="space-y-2">
               <div className="flex items-center gap-2 text-lg text-amber-700 themed-modal-text-alt"><TagIcon className="w-5 h-5" /><label htmlFor="tags-input" className="font-bold">Tags</label></div>

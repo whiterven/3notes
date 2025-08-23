@@ -215,11 +215,11 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                             disabled={isLoading}
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                            <button type="button" onClick={handleVoiceInput} disabled={isLoading} className={`p-3 rounded-full transition ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 themed-modal-button'}`} aria-label={isListening ? 'Stop listening' : 'Start listening'}>
-                                <MicIcon className="w-6 h-6"/>
+                            <button type="button" onClick={handleVoiceInput} disabled={isLoading} className={`p-2 sm:p-3 rounded-full transition ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 themed-modal-button'}`} aria-label={isListening ? 'Stop listening' : 'Start listening'}>
+                                <MicIcon className="w-5 h-5 sm:w-6 sm:h-6"/>
                             </button>
-                            <button type="submit" disabled={isLoading || !input.trim()} className="bg-amber-600 text-white rounded-full p-3 hover:bg-amber-700 transition disabled:bg-amber-300 disabled:cursor-not-allowed">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                            <button type="submit" disabled={isLoading || !input.trim()} className="bg-amber-600 text-white rounded-full p-2 sm:p-3 hover:bg-amber-700 transition disabled:bg-amber-300 disabled:cursor-not-allowed">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 sm:w-6 sm:h-6"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                             </button>
                         </div>
                     </div>

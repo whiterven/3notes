@@ -427,7 +427,7 @@ const App: React.FC = () => {
                       <button 
                           key={tag} 
                           onClick={() => toggleTagFilter(tag)}
-                          className={`text-lg px-3 py-1 rounded-full border-2 transition-colors duration-200 ${activeTags.includes(tag) ? 'bg-amber-700 text-white border-amber-700 themed-tag-button-active' : 'bg-white text-amber-700 border-amber-300 hover:bg-amber-100 themed-tag-button'}`}
+                          className={`text-lg px-3 py-1 rounded-full border-2 transition-colors duration-200 ${activeTags.includes(tag) ? 'bg-amber-700 text-white border-amber-700 themed-tag-button-active' : 'bg-white/60 text-amber-700 border-amber-300 hover:bg-amber-100 themed-tag-button'}`}
                       >
                           {tag}
                       </button>

@@ -280,12 +280,14 @@ export const AddNoteForm: React.FC<NoteFormProps> = ({ onSave, onClose, noteToEd
           {showImageGenerator && (
             <div className="flex flex-col sm:flex-row gap-2">
               <input type="text" value={imagePrompt} onChange={(e) => setImagePrompt(e.target.value)} placeholder="Describe an image..." className="flex-grow bg-amber-50 border-2 border-amber-200 rounded-lg p-2 text-base sm:text-lg focus:outline-none focus:border-amber-400 transition themed-modal-input-bg themed-modal-text-alt" />
-              <button type="button" onClick={handleSuggestPrompt} disabled={isSuggestingPrompt || !editorRef.current?.textContent} className="bg-amber-400 text-white p-2 rounded-lg text-lg sm:text-xl hover:bg-amber-500 transition duration-200 disabled:bg-amber-300 flex items-center justify-center" title="Suggest prompt from note text">
-                {isSuggestingPrompt ? <LoaderIcon className="w-6 h-6 animate-spin" /> : <LightbulbIcon className="w-6 h-6" />}
-              </button>
-              <button type="button" onClick={handleImageGenerate} disabled={isGeneratingImage || !imagePrompt} className="bg-amber-500 text-white p-2 rounded-lg text-lg sm:text-xl hover:bg-amber-600 transition duration-200 disabled:bg-amber-300 flex items-center justify-center" title="Generate image">
-                {isGeneratingImage ? <LoaderIcon className="w-6 h-6 animate-spin" /> : <SparklesIcon className="w-6 h-6" />}
-              </button>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={handleSuggestPrompt} disabled={isSuggestingPrompt || !editorRef.current?.textContent} className="bg-amber-400 text-white p-2 rounded-lg text-lg sm:text-xl hover:bg-amber-500 transition duration-200 disabled:bg-amber-300 flex items-center justify-center" title="Suggest prompt from note text">
+                  {isSuggestingPrompt ? <LoaderIcon className="w-6 h-6 animate-spin" /> : <LightbulbIcon className="w-6 h-6" />}
+                </button>
+                <button type="button" onClick={handleImageGenerate} disabled={isGeneratingImage || !imagePrompt} className="bg-amber-500 text-white p-2 rounded-lg text-lg sm:text-xl hover:bg-amber-600 transition duration-200 disabled:bg-amber-300 flex items-center justify-center" title="Generate image">
+                  {isGeneratingImage ? <LoaderIcon className="w-6 h-6 animate-spin" /> : <SparklesIcon className="w-6 h-6" />}
+                </button>
+              </div>
             </div>
           )}
 

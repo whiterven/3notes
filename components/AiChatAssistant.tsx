@@ -174,9 +174,9 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                 
                 <div className="flex-grow p-4 overflow-y-auto space-y-6 thin-scrollbar">
                     {messages.map((msg, index) => (
-                        <div key={index} className={`flex gap-3 text-lg sm:text-xl ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div key={index} className={`flex gap-3 text-base sm:text-lg ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'ai' && <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><BrainCircuitIcon className="w-6 h-6 text-violet-700" /></div>}
-                            <div className={`max-w-xl px-3 sm:px-4 py-2 rounded-2xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200'}`}>
+                            <div className={`max-w-xl px-3 sm:px-4 py-2 rounded-xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200'}`}>
                                 {msg.role === 'user' ? (
                                     <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
                                 ) : (
@@ -200,9 +200,9 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                         </div>
                     ))}
                     {isLoading && (
-                         <div className="flex gap-3 text-lg sm:text-xl justify-start">
+                         <div className="flex gap-3 text-base sm:text-lg justify-start">
                              <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><LoaderIcon className="w-6 h-6 text-violet-700 animate-spin" /></div>
-                             <div className="max-w-xl px-3 sm:px-4 py-2 rounded-2xl bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200">
+                             <div className="max-w-xl px-3 sm:px-4 py-2 rounded-xl bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200">
                                  <p className="italic">Thinking...</p>
                              </div>
                          </div>
@@ -212,11 +212,11 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                 
                 <form onSubmit={handleSend} className="p-4 border-t border-amber-200 themed-modal-header space-y-2">
                      <div className="flex items-center justify-end gap-3 px-2">
-                        <label className="flex items-center gap-2 cursor-pointer text-lg themed-modal-text-alt">
-                            <GlobeIcon className="w-5 h-5" />
+                        <label className="flex items-center gap-1.5 cursor-pointer text-base themed-modal-text-alt">
+                            <GlobeIcon className="w-4 h-4" />
                             <span>Web Search</span>
                             <input type="checkbox" checked={useWebSearch} onChange={e => setUseWebSearch(e.target.checked)} className="sr-only peer" />
-                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
+                            <div className="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
                         </label>
                      </div>
                     <div className="flex items-end gap-2">
@@ -227,7 +227,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                             onChange={e => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder="Ask about your notes... or ask me to create one."
-                            className="flex-grow resize-none text-lg sm:text-xl p-3 bg-white rounded-xl border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300 themed-modal-input-bg themed-modal-text max-h-36 overflow-y-auto thin-scrollbar"
+                            className="flex-grow resize-none text-base sm:text-lg p-3 bg-white rounded-xl border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300 themed-modal-input-bg themed-modal-text max-h-36 overflow-y-auto thin-scrollbar"
                             disabled={isLoading}
                         />
                         <div className="flex items-center gap-1 flex-shrink-0">

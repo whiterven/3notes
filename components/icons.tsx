@@ -187,3 +187,10 @@ export const PinIcon: React.FC<IconProps> = ({ className, isFilled }) => (
         <path d="M12 17a5 5 0 0 0 5-5V5a3 3 0 0 0-3-3h-4a3 3 0 0 0-3 3v7a5 5 0 0 0 5 5Z"/>
     </svg>
 );
+
+export const ProfileIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+    </svg>
+);

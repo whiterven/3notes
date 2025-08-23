@@ -7,6 +7,7 @@ interface NoteCardProps {
   relatedNotes: Note[];
   onDelete: (id: string) => void;
   onEdit: (id: string) => void;
+  onView: (note: Note) => void;
   onSummarize: (id: string) => void;
   onTranscribe: (id: string) => void;
   onTagClick: (tag: string) => void;
@@ -32,7 +33,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     note, 
     relatedNotes,
     onDelete, 
-    onEdit, 
+    onEdit,
+    onView,
     onSummarize, 
     onTranscribe, 
     onTagClick, 
@@ -57,6 +59,12 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   
   const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
+    
+    // Stop propagation for any interactive elements inside the contenteditable div
+    if (target.closest('input, a, button')) {
+        e.stopPropagation();
+    }
+
     if (target.tagName === 'INPUT' && target.getAttribute('type') === 'checkbox') {
       // Allow the DOM to update the checkbox's checked state, then save the new HTML
       setTimeout(() => {
@@ -74,16 +82,17 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 
   return (
     <div 
+      onClick={() => onView(note)}
       className={`
       w-full max-w-sm sm:w-80 h-96 p-5 rounded-lg shadow-xl border border-amber-300/50 
-      flex flex-col gap-3 relative transition-all duration-300 ease-in-out
+      flex flex-col gap-3 relative transition-all duration-300 ease-in-out cursor-pointer
       ${note.color}
       `}
       aria-label={`Note with text: ${note.text.substring(0, 30)}...`}
     >
         {isThisNoteStackingTarget && (
             <button
-                onClick={() => onFinishStack(note.id)}
+                onClick={(e) => { e.stopPropagation(); onFinishStack(note.id); }}
                 className="absolute inset-0 bg-amber-800/80 rounded-lg z-20 flex flex-col items-center justify-center text-white text-3xl font-bold animate-fade-in-up"
             >
                 <LayersIcon className="w-12 h-12 mb-2"/>
@@ -91,7 +100,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             </button>
         )}
 
-        <div className={`absolute top-3 right-3 flex gap-1.5 z-10 ${isStacking ? 'opacity-20' : ''}`}>
+        <div className={`absolute top-3 right-3 flex gap-1.5 z-10 ${isStacking ? 'opacity-20' : ''}`} onClick={(e) => e.stopPropagation()}>
              <button onClick={() => onTogglePin(note.id)} disabled={isStacking} className="bg-amber-500/60 text-white rounded-full p-1.5 hover:bg-amber-500 transition-colors" aria-label="Pin note">
                 <PinIcon className="w-5 h-5" isFilled={note.isPinned} />
             </button>
@@ -104,7 +113,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         </div>
         
         {stackCount > 0 && !isStacking && (
-            <button onClick={() => onViewStack(note)} className="absolute top-3 left-3 bg-amber-600 text-white text-lg font-bold w-9 h-9 flex items-center justify-center rounded-full z-10 shadow-md hover:bg-amber-700 transition-transform hover:scale-110" title={`${stackCount} more notes in this stack`}>
+            <button onClick={(e) => { e.stopPropagation(); onViewStack(note); }} className="absolute top-3 left-3 bg-amber-600 text-white text-lg font-bold w-9 h-9 flex items-center justify-center rounded-full z-10 shadow-md hover:bg-amber-700 transition-transform hover:scale-110" title={`${stackCount} more notes in this stack`}>
                 +{stackCount}
             </button>
         )}
@@ -136,7 +145,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             />
 
             {note.audioUrl && (
-                <audio controls src={note.audioUrl} className="w-full h-10 custom-audio-player" aria-label="Audio player for note"></audio>
+                <audio onClick={(e) => e.stopPropagation()} controls src={note.audioUrl} className="w-full h-10 custom-audio-player" aria-label="Audio player for note"></audio>
             )}
             
             {note.tags && note.tags.length > 0 && (
@@ -144,7 +153,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                     {note.tags.map(tag => (
                         <button 
                             key={tag}
-                            onClick={() => onTagClick(tag)}
+                            onClick={(e) => { e.stopPropagation(); onTagClick(tag); }}
                             className="bg-amber-200/80 text-amber-800 text-base px-2.5 py-0.5 rounded-full hover:bg-amber-300 transition-colors"
                             aria-label={`Filter by tag: ${tag}`}
                             disabled={isStacking}
@@ -182,7 +191,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                     {relatedNotes.map(related => (
                        <button 
                             key={related.id}
-                            onClick={() => onNavigateToNote(related.id)}
+                            onClick={(e) => { e.stopPropagation(); onNavigateToNote(related.id); }}
                             className="bg-violet-200/80 text-violet-800 text-sm sm:text-base px-2.5 py-0.5 rounded-full hover:bg-violet-300 transition-colors"
                             aria-label={`Go to note: ${related.text.substring(0, 20)}`}
                             disabled={isStacking}
@@ -195,7 +204,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             )}
         </div>
 
-        <div className={`mt-auto pt-2 grid grid-cols-2 gap-2 ${isStacking ? 'opacity-20' : ''}`}>
+        <div className={`mt-auto pt-2 grid grid-cols-2 gap-2 ${isStacking ? 'opacity-20' : ''}`} onClick={(e) => e.stopPropagation()}>
             {note.audioUrl && (
                 <button
                     onClick={() => onTranscribe(note.id)}

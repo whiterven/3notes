@@ -7,9 +7,10 @@ import { AiChatAssistant } from './components/AiChatAssistant';
 import { EnvironmentSelector } from './components/EnvironmentSelector';
 import type { Environment } from './components/EnvironmentSelector';
 import { summarizeText, transcribeAudio, extractTasks, findRelatedNotes, expandNoteText } from './services/geminiService';
-import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon, TrendingUpIcon, ImportIcon } from './components/icons';
+import { PlusIcon, ProfileIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon, TrendingUpIcon, ImportIcon } from './components/icons';
 import { InsightsModal } from './components/InsightsModal';
 import { StackViewModal } from './components/StackViewModal';
+import { ViewNoteModal } from './components/ViewNoteModal';
 
 const LOCAL_STORAGE_KEY = 'ai-3d-notes';
 const ENV_STORAGE_KEY = 'ai-3d-notes-env';
@@ -70,6 +71,7 @@ const App: React.FC = () => {
   const [environment, setEnvironment] = useState<Environment>(getInitialEnv);
   const [stackingNoteId, setStackingNoteId] = useState<string | null>(null);
   const [viewingStack, setViewingStack] = useState<Note | null>(null);
+  const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -207,7 +209,12 @@ const App: React.FC = () => {
       setEditingNote(noteToEdit);
       setIsFormVisible(true);
       setViewingStack(null);
+      setViewingNote(null);
     }
+  };
+
+  const handleViewNote = (note: Note) => {
+    setViewingNote(note);
   };
 
   const handleAddNewNote = () => {
@@ -341,25 +348,6 @@ const App: React.FC = () => {
           showToast("Could not find the selected note. It might be filtered out or stacked.");
       }
   };
-  
-  const handleExport = () => {
-    try {
-        const dataStr = JSON.stringify(notes, null, 2);
-        const dataBlob = new Blob([dataStr], { type: "application/json" });
-        const dataUrl = URL.createObjectURL(dataBlob);
-        const linkElement = document.createElement('a');
-        linkElement.href = dataUrl;
-        linkElement.download = 'ai-notes-export.json';
-        document.body.appendChild(linkElement);
-        linkElement.click();
-        document.body.removeChild(linkElement);
-        URL.revokeObjectURL(dataUrl);
-        showToast("Notes exported successfully!", "success");
-    } catch (error) {
-        console.error("Failed to export notes:", error);
-        showToast("An error occurred during export.");
-    }
-  };
 
   const handleImportClick = () => {
       importInputRef.current?.click();
@@ -486,8 +474,8 @@ const App: React.FC = () => {
           <button onClick={handleImportClick} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Import Notes from JSON">
             <ImportIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Import</span>
           </button>
-          <button onClick={handleExport} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Export Notes as JSON">
-            <ExportIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Export</span>
+          <button onClick={() => showToast("Profile feature coming soon!", "success")} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Profile (coming soon)">
+            <ProfileIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Profile</span>
           </button>
           <button onClick={handleAddNewNote} className="flex items-center gap-1.5 text-sm sm:text-base bg-amber-700 text-white p-2 sm:px-3 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
             <PlusIcon className="w-5 h-5" /> <span className="hidden sm:inline">New Note</span>
@@ -570,6 +558,7 @@ const App: React.FC = () => {
                                     relatedNotes={relatedNotes}
                                     onDelete={() => deleteNote(note.id)}
                                     onEdit={() => handleEditNote(note.id)}
+                                    onView={() => handleViewNote(note)}
                                     onSummarize={() => handleSummarize(note.id)}
                                     onTranscribe={() => handleTranscribe(note.id)}
                                     onTagClick={handleTagClick}
@@ -656,6 +645,14 @@ const App: React.FC = () => {
           onClose={() => setViewingStack(null)}
           onUnstack={handleUnstackNote}
           onEdit={handleEditNote}
+        />
+      )}
+      
+      {viewingNote && (
+        <ViewNoteModal 
+            note={viewingNote}
+            onClose={() => setViewingNote(null)}
+            onEdit={handleEditNote}
         />
       )}
 

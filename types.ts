@@ -13,6 +13,8 @@ export interface Note {
   related_note_ids: string[] | null;
   stack_id: string | null;
   is_pinned?: boolean;
+  canvas_x: number | null;
+  canvas_y: number | null;
 }
 
 export type ToastType = 'error' | 'success';

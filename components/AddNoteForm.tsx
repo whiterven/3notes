@@ -103,7 +103,7 @@ const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ initialDrawing, onSave, o
 
 
 interface NoteFormProps {
-  onSave: (note: Omit<Note, 'id' | 'summary' | 'tasks' | 'related_note_ids' | 'user_id' | 'created_at'>, id?: string) => void;
+  onSave: (note: Omit<Note, 'id' | 'summary' | 'tasks' | 'related_note_ids' | 'user_id' | 'created_at' | 'canvas_x' | 'canvas_y'>, id?: string) => void;
   onClose: () => void;
   noteToEdit: Note | null;
   showToast: (message: string, type?: ToastType) => void;

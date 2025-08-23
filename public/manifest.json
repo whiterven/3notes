@@ -1,0 +1,21 @@
+{
+  "short_name": "Stickon AI",
+  "name": "Stickon AI",
+  "description": "A beautiful 3D notetaking application that integrates text, AI-generated images, and audio recordings. Powered by Gemini for smart summaries and Imagen for visuals.",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#fffbeb",
+  "display": "standalone",
+  "theme_color": "#fffbeb"
+}

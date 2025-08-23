@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { Note, ToastMessage, ToastType, UserProfile } from './types';
 import { AddNoteForm } from './components/AddNoteForm';
@@ -721,18 +722,18 @@ const App: React.FC = () => {
                 <LayoutGridIcon className="w-4 h-4 sm:w-5 sm:h-5"/> <span className="hidden md:inline">Canvas</span>
               </button>
            </div>
-           <button onClick={() => setIsInsightsVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button-violet" title="Get AI Insights">
+           <button onClick={() => setIsInsightsVisible(true)} className="flex items-center text-sm p-1 sm:p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button-violet" title="Get AI Insights">
             <TrendingUpIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline ml-1.5">Insights</span>
           </button>
-          <button onClick={() => setIsChatVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button-violet" title="Ask Your Notes">
+          <button onClick={() => setIsChatVisible(true)} className="flex items-center text-sm p-1 sm:p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button-violet" title="Ask Your Notes">
             <BrainCircuitIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline ml-1.5">Ask AI</span>
           </button>
           <EnvironmentSelector currentEnv={environment} onSelect={setEnvironment} />
            <input type="file" ref={importInputRef} onChange={handleImport} accept=".json" className="hidden" />
-          <button onClick={() => setIsProfileVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Profile & Settings">
+          <button onClick={() => setIsProfileVisible(true)} className="flex items-center text-sm p-1 sm:p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Profile & Settings">
             <ProfileIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline ml-1.5">Profile</span>
           </button>
-          <button onClick={handleAddNewNote} className="flex items-center gap-1.5 text-sm sm:text-base bg-amber-700 text-white p-2 sm:px-3 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
+          <button onClick={handleAddNewNote} className="flex items-center gap-1.5 text-sm bg-amber-700 text-white p-1.5 sm:p-2 sm:px-3 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
             <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">New Note</span>
           </button>
         </div>

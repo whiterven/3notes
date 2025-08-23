@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { Note, ToastMessage, ToastType } from '../types';
 import type { Content } from '@google/genai';
 import { queryNotes } from '../services/geminiService';
-import { CloseIcon, BrainCircuitIcon, LoaderIcon, MicIcon, GlobeIcon } from './icons';
+import { CloseIcon, BrainCircuitIcon, LoaderIcon, MicIcon, GlobeIcon, SendIcon } from './icons';
 
 interface AiChatAssistantProps {
     notes: Note[];
@@ -210,34 +210,27 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                     <div ref={messagesEndRef} />
                 </div>
                 
-                <form onSubmit={handleSend} className="p-4 border-t border-amber-200 themed-modal-header space-y-2">
-                     <div className="flex items-center justify-end gap-3 px-2">
-                        <label className="flex items-center gap-1.5 cursor-pointer text-base themed-modal-text-alt">
-                            <GlobeIcon className="w-4 h-4" />
-                            <span>Web Search</span>
-                            <input type="checkbox" checked={useWebSearch} onChange={e => setUseWebSearch(e.target.checked)} className="sr-only peer" />
-                            <div className="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
-                        </label>
-                     </div>
-                    <div className="flex items-end gap-2">
+                <form onSubmit={handleSend} className="p-4 border-t border-amber-200 themed-modal-header">
+                    <div className="bg-white rounded-xl border-2 border-amber-300 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-300 transition-all duration-300 themed-modal-input-bg flex items-end p-2 gap-2">
                         <textarea
                             ref={textareaRef}
                             rows={1}
                             value={input}
                             onChange={e => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Ask about your notes... or ask me to create one."
-                            className="flex-grow resize-none text-base sm:text-lg p-3 bg-white rounded-xl border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300 themed-modal-input-bg themed-modal-text max-h-36 overflow-y-auto thin-scrollbar"
+                            placeholder="Ask about your notes..."
+                            className="flex-grow resize-none bg-transparent text-base sm:text-lg focus:outline-none themed-modal-text max-h-36 overflow-y-auto thin-scrollbar"
                             disabled={isLoading}
                         />
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                            <button type="button" onClick={handleVoiceInput} disabled={isLoading} className={`p-2 sm:p-3 rounded-full transition ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 themed-modal-button'}`} aria-label={isListening ? 'Stop listening' : 'Start listening'}>
-                                <MicIcon className="w-5 h-5 sm:w-6 sm:h-6"/>
-                            </button>
-                            <button type="submit" disabled={isLoading || !input.trim()} className="bg-amber-600 text-white rounded-full p-2 sm:p-3 hover:bg-amber-700 transition disabled:bg-amber-300 disabled:cursor-not-allowed">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 sm:w-6 sm:h-6"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                            </button>
-                        </div>
+                        <button type="button" onClick={handleVoiceInput} disabled={isLoading} className={`p-2 rounded-full transition flex-shrink-0 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 themed-modal-button'}`} aria-label={isListening ? 'Stop listening' : 'Start listening'}>
+                            <MicIcon className="w-5 h-5"/>
+                        </button>
+                         <button type="button" onClick={() => setUseWebSearch(s => !s)} disabled={isLoading} className={`p-2 rounded-full transition flex-shrink-0 ${useWebSearch ? 'bg-sky-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 themed-modal-button'}`} aria-label={useWebSearch ? 'Disable web search' : 'Enable web search'}>
+                            <GlobeIcon className="w-5 h-5"/>
+                        </button>
+                        <button type="submit" disabled={isLoading || !input.trim()} className="bg-amber-600 text-white rounded-full p-2 hover:bg-amber-700 transition disabled:bg-amber-300 disabled:cursor-not-allowed flex-shrink-0">
+                           <SendIcon className="w-5 h-5"/>
+                        </button>
                     </div>
                 </form>
             </div>

@@ -55,11 +55,18 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
     const [isListening, setIsListening] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const recognitionRef = useRef<any>(null);
-
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+    
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    }, [input]);
 
     useEffect(() => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -144,6 +151,13 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
             setIsLoading(false);
         }
     };
+    
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend(e as any);
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4" aria-modal="true">
@@ -160,9 +174,9 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                 
                 <div className="flex-grow p-4 overflow-y-auto space-y-6 thin-scrollbar">
                     {messages.map((msg, index) => (
-                        <div key={index} className={`flex gap-3 text-xl sm:text-2xl ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div key={index} className={`flex gap-3 text-lg sm:text-xl ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'ai' && <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><BrainCircuitIcon className="w-6 h-6 text-violet-700" /></div>}
-                            <div className={`max-w-xl px-4 py-2 rounded-2xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200'}`}>
+                            <div className={`max-w-xl px-3 sm:px-4 py-2 rounded-2xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200'}`}>
                                 {msg.role === 'user' ? (
                                     <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
                                 ) : (
@@ -186,9 +200,9 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                         </div>
                     ))}
                     {isLoading && (
-                         <div className="flex gap-3 text-xl sm:text-2xl justify-start">
+                         <div className="flex gap-3 text-lg sm:text-xl justify-start">
                              <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><LoaderIcon className="w-6 h-6 text-violet-700 animate-spin" /></div>
-                             <div className="max-w-xl px-4 py-2 rounded-2xl bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200">
+                             <div className="max-w-xl px-3 sm:px-4 py-2 rounded-2xl bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200">
                                  <p className="italic">Thinking...</p>
                              </div>
                          </div>
@@ -205,16 +219,18 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                             <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
                         </label>
                      </div>
-                    <div className="relative">
-                        <input
-                            type="text"
+                    <div className="flex items-end gap-2">
+                        <textarea
+                            ref={textareaRef}
+                            rows={1}
                             value={input}
                             onChange={e => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
                             placeholder="Ask about your notes... or ask me to create one."
-                            className="w-full text-xl sm:text-2xl p-4 pr-28 bg-white rounded-full border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300 themed-modal-input-bg themed-modal-text"
+                            className="flex-grow resize-none text-lg sm:text-xl p-3 bg-white rounded-xl border-2 border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-300 transition duration-300 themed-modal-input-bg themed-modal-text max-h-36 overflow-y-auto thin-scrollbar"
                             disabled={isLoading}
                         />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                             <button type="button" onClick={handleVoiceInput} disabled={isLoading} className={`p-2 sm:p-3 rounded-full transition ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-amber-100 text-amber-700 hover:bg-amber-200 themed-modal-button'}`} aria-label={isListening ? 'Stop listening' : 'Start listening'}>
                                 <MicIcon className="w-5 h-5 sm:w-6 sm:h-6"/>
                             </button>

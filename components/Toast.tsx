@@ -30,7 +30,7 @@ export const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
   
   return (
     <div
-      className={`fixed bottom-5 left-1/2 -translate-x-1/2 min-w-[300px] max-w-md p-4 rounded-lg shadow-2xl text-white text-lg sm:text-xl text-center
+      className={`fixed bottom-5 left-1/2 -translate-x-1/2 w-11/12 max-w-md p-3 sm:p-4 rounded-lg shadow-2xl text-white text-base sm:text-lg text-center
         ${bgColor}
         transition-all duration-300 ease-in-out
         ${visible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}

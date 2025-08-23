@@ -10,6 +10,7 @@ export interface Note {
   tasks: string[] | null;
   relatedNoteIds: string[] | null;
   stackId: string | null;
+  isPinned?: boolean;
 }
 
 export type ToastType = 'error' | 'success';

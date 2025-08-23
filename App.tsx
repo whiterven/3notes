@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Note, ToastMessage, ToastType } from './types';
 import { AddNoteForm } from './components/AddNoteForm';
 import { NoteCard } from './components/NoteCard';
@@ -7,8 +7,9 @@ import { AiChatAssistant } from './components/AiChatAssistant';
 import { EnvironmentSelector } from './components/EnvironmentSelector';
 import type { Environment } from './components/EnvironmentSelector';
 import { summarizeText, transcribeAudio, extractTasks, findRelatedNotes, expandNoteText } from './services/geminiService';
-import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon, TrendingUpIcon } from './components/icons';
+import { PlusIcon, ExportIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon, TrendingUpIcon, ImportIcon } from './components/icons';
 import { InsightsModal } from './components/InsightsModal';
+import { StackViewModal } from './components/StackViewModal';
 
 const LOCAL_STORAGE_KEY = 'ai-3d-notes';
 const ENV_STORAGE_KEY = 'ai-3d-notes-env';
@@ -29,6 +30,7 @@ const getInitialNotes = (): Note[] => {
                     tasks: note.tasks || null,
                     relatedNoteIds: note.relatedNoteIds || null,
                     stackId: note.stackId || null,
+                    isPinned: note.isPinned || false,
                 }));
             }
         }
@@ -67,6 +69,8 @@ const App: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [environment, setEnvironment] = useState<Environment>(getInitialEnv);
   const [stackingNoteId, setStackingNoteId] = useState<string | null>(null);
+  const [viewingStack, setViewingStack] = useState<Note | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -96,7 +100,7 @@ const App: React.FC = () => {
   }, [notes]);
 
   const filteredNotes = useMemo(() => {
-    return notes.filter(note => {
+    const filtered = notes.filter(note => {
         const searchMatch = searchTerm.toLowerCase()
             ? note.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
               (note.summary && note.summary.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -109,11 +113,23 @@ const App: React.FC = () => {
 
         return searchMatch && tagsMatch;
     });
+
+    // Sort to bring pinned notes to the front
+    return filtered.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return 0; // maintain original order for notes with same pinned status
+    });
   }, [notes, searchTerm, activeTags]);
   
   const carouselNotes = useMemo(() => {
     return filteredNotes.filter(note => !note.stackId);
   }, [filteredNotes]);
+  
+  const notesInStack = useMemo(() => {
+    if (!viewingStack) return [];
+    return filteredNotes.filter(note => note.stackId === viewingStack.id);
+  }, [filteredNotes, viewingStack]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -137,6 +153,7 @@ const App: React.FC = () => {
             tags: noteData.tags || [],
             tasks: null,
             relatedNoteIds: null,
+            isPinned: false,
         };
         setNotes(prevNotes => [newNote, ...prevNotes]);
     }
@@ -157,6 +174,7 @@ const App: React.FC = () => {
       tasks: null,
       relatedNoteIds: null,
       stackId: null,
+      isPinned: false,
     };
     setNotes(prevNotes => [newNote, ...prevNotes]);
     showToast("AI created a new note for you!", "success");
@@ -188,6 +206,7 @@ const App: React.FC = () => {
     if (noteToEdit) {
       setEditingNote(noteToEdit);
       setIsFormVisible(true);
+      setViewingStack(null);
     }
   };
 
@@ -341,6 +360,58 @@ const App: React.FC = () => {
         showToast("An error occurred during export.");
     }
   };
+
+  const handleImportClick = () => {
+      importInputRef.current?.click();
+  };
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const text = e.target?.result;
+            if (typeof text !== 'string') throw new Error("File could not be read.");
+            
+            const importedNotes = JSON.parse(text);
+            if (!Array.isArray(importedNotes)) throw new Error("Invalid format: Not an array.");
+
+            // Basic validation of notes
+            const validNotes = importedNotes.filter(n => n.id && typeof n.text !== 'undefined');
+            const newNotes = validNotes.map(n => ({
+                ...n,
+                isPinned: n.isPinned || false, // Ensure defaults
+                tags: n.tags || [],
+            }));
+
+            // Merge imported notes with existing notes, avoiding duplicates by ID
+            setNotes(prev => {
+                const existingIds = new Set(prev.map(n => n.id));
+                const uniqueNewNotes = newNotes.filter(n => !existingIds.has(n.id));
+
+                if (uniqueNewNotes.length === 0) {
+                    showToast("No new notes to import.", "success");
+                    return prev; // No changes
+                }
+
+                showToast(`${uniqueNewNotes.length} notes imported successfully!`, "success");
+                return [...prev, ...uniqueNewNotes];
+            });
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            showToast(`Import failed: ${errorMessage}`);
+        } finally {
+            // Reset file input
+            if (importInputRef.current) {
+                importInputRef.current.value = "";
+            }
+        }
+    };
+    reader.readAsText(file);
+  };
   
   const handleStartStack = (id: string) => {
     setStackingNoteId(current => (current === id ? null : id));
@@ -351,6 +422,17 @@ const App: React.FC = () => {
     setNotes(prev => prev.map(n => (n.id === stackingNoteId ? { ...n, stackId: targetId } : n)));
     setStackingNoteId(null);
     showToast("Notes stacked successfully!", "success");
+  };
+
+  const handleTogglePin = (id: string) => {
+    setNotes(prev =>
+      prev.map(n => (n.id === id ? { ...n, isPinned: !n.isPinned } : n))
+    );
+  };
+  
+  const handleUnstackNote = (id: string) => {
+    setNotes(prev => prev.map(n => (n.id === id ? { ...n, stackId: null } : n)));
+    showToast("Note unstacked!", "success");
   };
 
   const toggleTagFilter = (tag: string) => {
@@ -400,6 +482,10 @@ const App: React.FC = () => {
             <BrainCircuitIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Ask AI</span>
           </button>
           <EnvironmentSelector currentEnv={environment} onSelect={setEnvironment} />
+           <input type="file" ref={importInputRef} onChange={handleImport} accept=".json" className="hidden" />
+          <button onClick={handleImportClick} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Import Notes from JSON">
+            <ImportIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Import</span>
+          </button>
           <button onClick={handleExport} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Export Notes as JSON">
             <ExportIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Export</span>
           </button>
@@ -494,6 +580,8 @@ const App: React.FC = () => {
                                     onNavigateToNote={handleNavigateToNote}
                                     onStartStack={handleStartStack}
                                     onFinishStack={handleFinishStack}
+                                    onTogglePin={() => handleTogglePin(note.id)}
+                                    onViewStack={() => setViewingStack(note)}
                                     isSummarizing={isLoadingSummary === note.id}
                                     isTranscribing={isTranscribing === note.id}
                                     isExtractingTasks={isExtractingTasks === note.id}
@@ -559,6 +647,16 @@ const App: React.FC = () => {
               onClose={() => setIsInsightsVisible(false)}
               showToast={showToast}
           />
+      )}
+      
+      {viewingStack && (
+        <StackViewModal
+          parentNote={viewingStack}
+          stackedNotes={notesInStack}
+          onClose={() => setViewingStack(null)}
+          onUnstack={handleUnstackNote}
+          onEdit={handleEditNote}
+        />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

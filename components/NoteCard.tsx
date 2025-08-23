@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import type { Note } from '../types';
-import { CloseIcon, LoaderIcon, SparklesIcon, EditIcon, TranscribeIcon, ClipboardListIcon, LinkIcon, LayersIcon, WandIcon } from './icons';
+import { CloseIcon, LoaderIcon, SparklesIcon, EditIcon, TranscribeIcon, ClipboardListIcon, LinkIcon, LayersIcon, WandIcon, PinIcon } from './icons';
 
 interface NoteCardProps {
   note: Note;
@@ -11,12 +11,14 @@ interface NoteCardProps {
   onTranscribe: (id: string) => void;
   onTagClick: (tag: string) => void;
   onTextUpdate: (id: string, newText: string) => void;
-  onFindTasks: (id: string) => void;
+  onFindTasks: (id:string) => void;
   onFindRelatedNotes: (id: string) => void;
   onExpand: (id: string) => void;
   onNavigateToNote: (id: string) => void;
   onStartStack: (id: string) => void;
   onFinishStack: (id: string) => void;
+  onTogglePin: (id: string) => void;
+  onViewStack: (note: Note) => void;
   isSummarizing: boolean;
   isTranscribing: boolean;
   isExtractingTasks: boolean;
@@ -41,6 +43,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     onNavigateToNote,
     onStartStack,
     onFinishStack,
+    onTogglePin,
+    onViewStack,
     isSummarizing, 
     isTranscribing,
     isExtractingTasks,
@@ -88,6 +92,9 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         )}
 
         <div className={`absolute top-3 right-3 flex gap-1.5 z-10 ${isStacking ? 'opacity-20' : ''}`}>
+             <button onClick={() => onTogglePin(note.id)} disabled={isStacking} className="bg-amber-500/60 text-white rounded-full p-1.5 hover:bg-amber-500 transition-colors" aria-label="Pin note">
+                <PinIcon className="w-5 h-5" isFilled={note.isPinned} />
+            </button>
             <button onClick={() => onEdit(note.id)} disabled={isStacking} className="bg-amber-500/60 text-white rounded-full p-1.5 hover:bg-amber-500 transition-colors" aria-label="Edit note">
                 <EditIcon className="w-5 h-5"/>
             </button>
@@ -97,8 +104,14 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         </div>
         
         {stackCount > 0 && !isStacking && (
-            <div className="absolute top-3 left-3 bg-amber-600 text-white text-lg font-bold w-9 h-9 flex items-center justify-center rounded-full z-10 shadow-md" title={`${stackCount} more notes in this stack`}>
+            <button onClick={() => onViewStack(note)} className="absolute top-3 left-3 bg-amber-600 text-white text-lg font-bold w-9 h-9 flex items-center justify-center rounded-full z-10 shadow-md hover:bg-amber-700 transition-transform hover:scale-110" title={`${stackCount} more notes in this stack`}>
                 +{stackCount}
+            </button>
+        )}
+
+        {note.isPinned && (
+            <div className="absolute top-4 left-3 z-0" title="Pinned note">
+                 <PinIcon className="w-5 h-5 text-amber-600/50" isFilled={true} />
             </div>
         )}
 

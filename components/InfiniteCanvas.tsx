@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef } from 'react';
 import type { Note } from '../types';
 import { CanvasNote } from './CanvasNote';
@@ -14,16 +15,35 @@ interface InfiniteCanvasProps {
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 2;
 
+const getDistance = (touches: React.TouchList | TouchList) => {
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    return Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+    );
+};
+
+const getMidpoint = (touches: React.TouchList | TouchList) => {
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    return {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2,
+    };
+};
+
 export const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({ notes, onNotePositionChange, onViewNote, onTidyNotes }) => {
     const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
-    const [isPanning, setIsPanning] = useState(false);
+    const isPanningRef = useRef(false);
     const startPanPos = useRef({ x: 0, y: 0 });
+    const pinchStartDistance = useRef(0);
     const canvasRef = useRef<HTMLDivElement>(null);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (e.target !== canvasRef.current) return;
         e.preventDefault();
-        setIsPanning(true);
+        isPanningRef.current = true;
         startPanPos.current = { 
             x: e.clientX - transform.x,
             y: e.clientY - transform.y 
@@ -31,7 +51,7 @@ export const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({ notes, onNotePos
     };
 
     const handleMouseMove = (e: React.MouseEvent) => {
-        if (!isPanning) return;
+        if (!isPanningRef.current) return;
         e.preventDefault();
         setTransform(prev => ({
             ...prev,
@@ -41,7 +61,7 @@ export const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({ notes, onNotePos
     };
 
     const handleMouseUp = () => {
-        setIsPanning(false);
+        isPanningRef.current = false;
     };
 
     const handleWheel = (e: React.WheelEvent) => {
@@ -62,6 +82,62 @@ export const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({ notes, onNotePos
         }
     };
 
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (e.target !== canvasRef.current) return;
+        e.preventDefault();
+
+        if (e.touches.length === 1) { // Pan
+            isPanningRef.current = true;
+            startPanPos.current = {
+                x: e.touches[0].clientX - transform.x,
+                y: e.touches[0].clientY - transform.y
+            };
+        } else if (e.touches.length === 2) { // Pinch
+            isPanningRef.current = false; // Stop panning if it was active
+            pinchStartDistance.current = getDistance(e.touches);
+        }
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        e.preventDefault();
+
+        if (e.touches.length === 1 && isPanningRef.current) { // Pan
+            setTransform(prev => ({
+                ...prev,
+                x: e.touches[0].clientX - startPanPos.current.x,
+                y: e.touches[0].clientY - startPanPos.current.y
+            }));
+        } else if (e.touches.length === 2 && pinchStartDistance.current > 0) { // Pinch
+            const newDistance = getDistance(e.touches);
+            const scaleFactor = newDistance / pinchStartDistance.current;
+            
+            setTransform(prevTransform => {
+                const newScale = Math.min(Math.max(prevTransform.scale * scaleFactor, MIN_SCALE), MAX_SCALE);
+                
+                if (canvasRef.current) {
+                    const rect = canvasRef.current.getBoundingClientRect();
+                    const midpoint = getMidpoint(e.touches);
+                    const mouseX = midpoint.x - rect.left;
+                    const mouseY = midpoint.y - rect.top;
+
+                    const newX = prevTransform.x + (mouseX - prevTransform.x) * (1 - newScale / prevTransform.scale);
+                    const newY = prevTransform.y + (mouseY - prevTransform.y) * (1 - newScale / prevTransform.scale);
+                    
+                    return { x: newX, y: newY, scale: newScale };
+                }
+                return { ...prevTransform, scale: newScale };
+            });
+
+            pinchStartDistance.current = newDistance; // Update for continuous zoom
+        }
+    };
+
+    const handleTouchEnd = () => {
+        isPanningRef.current = false;
+        pinchStartDistance.current = 0;
+    };
+
+
     const handleZoom = (direction: 'in' | 'out') => {
         const zoomFactor = 1.2;
         const newScale = direction === 'in' 
@@ -78,12 +154,15 @@ export const InfiniteCanvas: React.FC<InfiniteCanvasProps> = ({ notes, onNotePos
     return (
         <div 
             ref={canvasRef}
-            className="w-full h-full overflow-hidden cursor-grab relative"
+            className="w-full h-full overflow-hidden cursor-grab relative touch-none"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
         >
              <div 
                 className="absolute top-0 left-0"

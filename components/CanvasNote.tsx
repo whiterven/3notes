@@ -1,7 +1,6 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import type { Note } from '../types';
-import { LayersIcon, PinIcon } from './icons';
+import { PinIcon } from './icons';
 
 interface CanvasNoteProps {
     note: Note;
@@ -11,72 +10,126 @@ interface CanvasNoteProps {
 }
 
 export const CanvasNote: React.FC<CanvasNoteProps> = ({ note, onPositionChange, onView, scale }) => {
-    const [isDragging, setIsDragging] = useState(false);
-    const dragStartPos = useRef({ x: 0, y: 0 });
     const noteRef = useRef<HTMLDivElement>(null);
+    // Use a more detailed state for dragging to make it robust
+    const dragData = useRef({ isDragging: false, startX: 0, startY: 0, startNoteX: 0, startNoteY: 0, hasMoved: false });
 
     const plainText = (note.text || "").replace(/<[^>]*>?/gm, ' ').substring(0, 100);
-    const stackCount = 0; // Simplified for now, could be passed in if needed
 
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!isDragging || !noteRef.current) return;
-            e.preventDefault();
-
-            const dx = (e.clientX - dragStartPos.current.x) / scale;
-            const dy = (e.clientY - dragStartPos.current.y) / scale;
-
-            const newX = (note.canvas_x || 0) + dx;
-            const newY = (note.canvas_y || 0) + dy;
-            
-            noteRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
+    const handleDragStart = (clientX: number, clientY: number) => {
+        dragData.current = {
+            isDragging: true,
+            startX: clientX,
+            startY: clientY,
+            startNoteX: note.canvas_x || 0, // Capture position at drag start
+            startNoteY: note.canvas_y || 0,
+            hasMoved: false
         };
+        if (noteRef.current) {
+            noteRef.current.style.transition = 'none';
+            noteRef.current.classList.add('cursor-grabbing', 'shadow-2xl', 'z-50');
+        }
+    };
 
-        const handleMouseUp = (e: MouseEvent) => {
-            if (!isDragging || !noteRef.current) return;
-            
-            const dx = (e.clientX - dragStartPos.current.x);
-            const dy = (e.clientY - dragStartPos.current.y);
+    const handleDragMove = (clientX: number, clientY: number) => {
+        if (!dragData.current.isDragging || !noteRef.current) return;
 
-            // If it moved significantly, it's a drag, otherwise it's a click
-            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-                const newX = (note.canvas_x || 0) + dx / scale;
-                const newY = (note.canvas_y || 0) + dy / scale;
-                onPositionChange(note.id, newX, newY);
-            } else {
-                onView(note);
-            }
+        // Use pixel distance for move detection to avoid scale issues
+        const pixelDx = clientX - dragData.current.startX;
+        const pixelDy = clientY - dragData.current.startY;
+        
+        if (!dragData.current.hasMoved && (Math.abs(pixelDx) > 5 || Math.abs(pixelDy) > 5)) {
+            dragData.current.hasMoved = true;
+        }
+        
+        const dx = pixelDx / scale;
+        const dy = pixelDy / scale;
 
-            setIsDragging(false);
-        };
+        const newX = dragData.current.startNoteX + dx;
+        const newY = dragData.current.startNoteY + dy;
+        noteRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
+    };
 
-        if (isDragging) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
+    const handleDragEnd = (clientX: number, clientY: number) => {
+        if (!dragData.current.isDragging) return;
+
+        const wasMoved = dragData.current.hasMoved;
+        
+        // Finalize dragging state before anything else
+        dragData.current.isDragging = false;
+
+        if (noteRef.current) {
+            // Always clean up styles
+            noteRef.current.style.transition = '';
+            noteRef.current.classList.remove('cursor-grabbing', 'shadow-2xl', 'z-50');
         }
 
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isDragging, scale, note.id, note.canvas_x, note.canvas_y, onPositionChange, onView]);
+        if (wasMoved) {
+            const dx = (clientX - dragData.current.startX) / scale;
+            const dy = (clientY - dragData.current.startY) / scale;
+            const finalX = dragData.current.startNoteX + dx;
+            const finalY = dragData.current.startNoteY + dy;
+
+            // Immediately set the final transform style. This is the key to preventing the jump.
+            // The note will stay visually in place while React state catches up.
+            if (noteRef.current) {
+                noteRef.current.style.transform = `translate(${finalX}px, ${finalY}px)`;
+            }
+            
+            // Now, tell the parent about the new final position.
+            onPositionChange(note.id, finalX, finalY);
+        } else {
+            // If it wasn't moved, treat it as a click/tap.
+            onView(note);
+        }
+    };
 
     const handleMouseDown = (e: React.MouseEvent) => {
         e.stopPropagation();
-        dragStartPos.current = { x: e.clientX, y: e.clientY };
-        setIsDragging(true);
+        handleDragStart(e.clientX, e.clientY);
+        
+        const onMouseMove = (ev: MouseEvent) => handleDragMove(ev.clientX, ev.clientY);
+        const onMouseUp = (ev: MouseEvent) => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            handleDragEnd(ev.clientX, ev.clientY);
+        };
+        
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
     };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        e.stopPropagation();
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        handleDragStart(touch.clientX, touch.clientY);
+        
+        const onTouchMove = (ev: TouchEvent) => {
+            if (ev.touches.length === 1) {
+                handleDragMove(ev.touches[0].clientX, ev.touches[0].clientY);
+            }
+        };
+        const onTouchEnd = (ev: TouchEvent) => {
+            window.removeEventListener('touchmove', onTouchMove);
+            window.removeEventListener('touchend', onTouchEnd);
+            handleDragEnd(ev.changedTouches[0].clientX, ev.changedTouches[0].clientY);
+        };
+        
+        window.addEventListener('touchmove', onTouchMove);
+        window.addEventListener('touchend', onTouchEnd);
+    };
+
 
     return (
         <div
             ref={noteRef}
             onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
             style={{ 
                 transform: `translate(${note.canvas_x || 0}px, ${note.canvas_y || 0}px)`,
-                width: '280px',
-                height: '180px',
             }}
-            className={`absolute p-3 rounded-lg shadow-lg border border-amber-300/50 flex flex-col gap-2 cursor-grab transition-transform duration-500 ease-in-out ${isDragging ? 'cursor-grabbing shadow-2xl z-50' : ''} ${note.color}`}
+            className={`absolute w-60 h-40 sm:w-72 sm:h-48 p-3 rounded-lg shadow-lg border border-amber-300/50 flex flex-col gap-2 cursor-grab transition-transform duration-500 ease-in-out ${note.color}`}
             aria-label={`Note with text: ${plainText.substring(0, 30)}...`}
         >
              {note.is_pinned && (
@@ -86,16 +139,16 @@ export const CanvasNote: React.FC<CanvasNoteProps> = ({ note, onPositionChange, 
             )}
             <div className="flex-grow overflow-hidden space-y-2 pointer-events-none">
                 {note.image_url && (
-                    <div className="w-full h-16 rounded-md overflow-hidden shadow-inner border border-amber-200">
+                    <div className="w-full h-12 sm:h-16 rounded-md overflow-hidden shadow-inner border border-amber-200">
                         <img src={note.image_url} alt="Note illustration" className="w-full h-full object-cover" />
                     </div>
                 )}
                 {note.drawing_url && (
-                    <div className="w-full h-16 rounded-md overflow-hidden shadow-inner border border-amber-200 bg-white">
+                    <div className="w-full h-12 sm:h-16 rounded-md overflow-hidden shadow-inner border border-amber-200 bg-white">
                         <img src={note.drawing_url} alt="User drawing" className="w-full h-full object-contain" />
                     </div>
                 )}
-                <p className="text-amber-900 text-lg leading-tight">{plainText}{plainText.length === 100 ? '...' : ''}</p>
+                <p className="text-amber-900 text-base sm:text-lg leading-tight">{plainText}{plainText.length === 100 ? '...' : ''}</p>
             </div>
 
             {note.tags && note.tags.length > 0 && (

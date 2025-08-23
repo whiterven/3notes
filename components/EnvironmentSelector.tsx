@@ -30,7 +30,7 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({ curren
                 className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button"
                 title="Change Environment"
             >
-                <PaletteIcon className="w-5 h-5" />
+                <PaletteIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="hidden sm:inline ml-1.5">Environments</span>
             </button>
 
@@ -44,13 +44,13 @@ export const EnvironmentSelector: React.FC<EnvironmentSelectorProps> = ({ curren
 
             {isOpen && (
                  <div
-                    className="absolute right-0 top-full mt-2 w-72 bg-white/80 backdrop-blur-md rounded-xl shadow-2xl border border-amber-200 p-4 z-50 animate-fade-in-up"
+                    className="absolute right-0 top-full mt-2 w-64 sm:w-72 bg-white/80 backdrop-blur-md rounded-xl shadow-2xl border border-amber-200 p-4 z-50 animate-fade-in-up"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="env-select-title"
                 >
                     <div className="flex justify-between items-center mb-4">
-                        <h3 id="env-select-title" className="text-2xl text-amber-800 font-bold">Choose Environment</h3>
+                        <h3 id="env-select-title" className="text-xl sm:text-2xl text-amber-800 font-bold">Choose Environment</h3>
                         <button onClick={() => setIsOpen(false)} className="text-amber-600 hover:text-amber-800" aria-label="Close">
                             <CloseIcon className="w-6 h-6" />
                         </button>

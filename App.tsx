@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { Note, ToastMessage, ToastType, UserProfile } from './types';
 import { AddNoteForm } from './components/AddNoteForm';
@@ -640,7 +641,7 @@ const App: React.FC = () => {
       debouncedSavePosition(noteId, x, y);
   }, [debouncedSavePosition]);
   
-  const handleUpdateNotePositions = async (updates: {id: string; user_id: string; canvas_x: number | null; canvas_y: number | null; }[]) => {
+  const handleUpdateNotePositions = async (updates: Note[]) => {
       // 1. Update local state for immediate feedback
       const updateMap = new Map(updates.map(u => [u.id, u]));
       setNotes(prev => prev.map(n => {
@@ -664,10 +665,12 @@ const App: React.FC = () => {
       return;
     }
 
-    const NOTE_WIDTH = 280;
-    const NOTE_HEIGHT = 180;
-    const GAP_X = 40;
-    const GAP_Y = 40;
+    const isMobile = window.innerWidth < 640; // Tailwind's 'sm' breakpoint
+
+    const NOTE_WIDTH = isMobile ? 240 : 288;   // Corresponds to w-60 and sm:w-72
+    const NOTE_HEIGHT = isMobile ? 160 : 192;  // Corresponds to h-40 and sm:h-48
+    const GAP_X = isMobile ? 20 : 40;
+    const GAP_Y = isMobile ? 20 : 40;
     
     // Use a slightly smaller width to account for scrollbars/padding
     const containerWidth = window.innerWidth * 0.95; 
@@ -677,8 +680,7 @@ const App: React.FC = () => {
         const row = Math.floor(index / COLUMNS);
         const col = index % COLUMNS;
         return {
-            id: note.id,
-            user_id: note.user_id,
+            ...note,
             canvas_x: col * (NOTE_WIDTH + GAP_X) + GAP_X, // Add offset from edge
             canvas_y: row * (NOTE_HEIGHT + GAP_Y) + GAP_Y, // Add offset from edge
         };
@@ -711,27 +713,27 @@ const App: React.FC = () => {
           <p className="text-sm sm:text-lg text-amber-600">Welcome, {userProfile.name}!</p>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
-           <div className="bg-amber-100/50 dark:bg-gray-700/50 p-0.5 rounded-full flex items-center">
+           <div className="bg-amber-100/50 dark:bg-black/20 p-0.5 rounded-full flex items-center">
               <button onClick={() => setViewMode('carousel')} className={`p-1 sm:px-2 rounded-full flex items-center gap-1.5 text-sm transition ${viewMode === 'carousel' ? 'bg-white dark:bg-gray-900 shadow' : 'opacity-70'}`} title="Carousel View">
-                <CarouselIcon className="w-5 h-5"/> <span className="hidden md:inline">Carousel</span>
+                <CarouselIcon className="w-4 h-4 sm:w-5 sm:h-5"/> <span className="hidden md:inline">Carousel</span>
               </button>
               <button onClick={() => setViewMode('canvas')} className={`p-1 sm:px-2 rounded-full flex items-center gap-1.5 text-sm transition ${viewMode === 'canvas' ? 'bg-white dark:bg-gray-900 shadow' : 'opacity-70'}`} title="Canvas View">
-                <LayoutGridIcon className="w-5 h-5"/> <span className="hidden md:inline">Canvas</span>
+                <LayoutGridIcon className="w-4 h-4 sm:w-5 sm:h-5"/> <span className="hidden md:inline">Canvas</span>
               </button>
            </div>
            <button onClick={() => setIsInsightsVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button-violet" title="Get AI Insights">
-            <TrendingUpIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Insights</span>
+            <TrendingUpIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline ml-1.5">Insights</span>
           </button>
           <button onClick={() => setIsChatVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button-violet" title="Ask Your Notes">
-            <BrainCircuitIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Ask AI</span>
+            <BrainCircuitIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline ml-1.5">Ask AI</span>
           </button>
           <EnvironmentSelector currentEnv={environment} onSelect={setEnvironment} />
            <input type="file" ref={importInputRef} onChange={handleImport} accept=".json" className="hidden" />
           <button onClick={() => setIsProfileVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Profile & Settings">
-            <ProfileIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Profile</span>
+            <ProfileIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline ml-1.5">Profile</span>
           </button>
           <button onClick={handleAddNewNote} className="flex items-center gap-1.5 text-sm sm:text-base bg-amber-700 text-white p-2 sm:px-3 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
-            <PlusIcon className="w-5 h-5" /> <span className="hidden sm:inline">New Note</span>
+            <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">New Note</span>
           </button>
         </div>
       </header>

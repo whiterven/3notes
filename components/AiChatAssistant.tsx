@@ -162,7 +162,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex gap-3 text-xl sm:text-2xl ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'ai' && <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><BrainCircuitIcon className="w-6 h-6 text-violet-700" /></div>}
-                            <div className={`max-w-xl p-3 rounded-2xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200'}`}>
+                            <div className={`max-w-xl px-4 py-2 rounded-2xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200'}`}>
                                 {msg.role === 'user' ? (
                                     <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
                                 ) : (
@@ -188,7 +188,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                     {isLoading && (
                          <div className="flex gap-3 text-xl sm:text-2xl justify-start">
                              <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><LoaderIcon className="w-6 h-6 text-violet-700 animate-spin" /></div>
-                             <div className="max-w-xl p-3 rounded-2xl bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200">
+                             <div className="max-w-xl px-4 py-2 rounded-2xl bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200">
                                  <p className="italic">Thinking...</p>
                              </div>
                          </div>

@@ -15,8 +15,12 @@ const markdownToHtml = (text: string) => {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 
-    // Headings (## text)
-    html = html.replace(/^##\s+(.*)$/gm, '<h3 class="text-2xl font-bold mt-4 mb-2">$1</h3>');
+    // Headings (e.g., #, ##, ###, ####) - process most specific first
+    html = html.replace(/^####\s+(.*)$/gm, '<h4 class="text-xl font-bold mt-3 mb-1">$1</h4>');
+    html = html.replace(/^###\s+(.*)$/gm, '<h3 class="text-2xl font-bold mt-4 mb-2">$1</h3>');
+    html = html.replace(/^##\s+(.*)$/gm, '<h2 class="text-3xl font-bold mt-5 mb-2">$1</h2>');
+    html = html.replace(/^#\s+(.*)$/gm, '<h1 class="text-4xl font-bold mt-6 mb-3">$1</h1>');
+
     // Bold (**text** or __text__)
     html = html.replace(/\*\*(.*?)\*\*|__(.*?)__/g, '<strong>$1$2</strong>');
     // Italic (*text* or _text_)

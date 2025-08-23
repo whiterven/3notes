@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { LoaderIcon } from './icons';
+import { LoaderIcon, EyeIcon, EyeOffIcon } from './icons';
 
 export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -8,6 +8,7 @@ export const Auth: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
   const [message, setMessage] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -56,15 +57,23 @@ export const Auth: React.FC = () => {
                 required
               />
             </div>
-            <div>
+            <div className="relative">
               <input
-                className="w-full text-lg sm:text-xl p-2 sm:p-3 bg-amber-50 border-2 border-amber-200 rounded-lg focus:border-amber-400 focus:ring-amber-300 transition text-amber-900"
-                type="password"
+                className="w-full text-lg sm:text-xl p-2 sm:p-3 pr-12 bg-amber-50 border-2 border-amber-200 rounded-lg focus:border-amber-400 focus:ring-amber-300 transition text-amber-900"
+                type={isPasswordVisible ? 'text' : 'password'}
                 placeholder="Your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-amber-600 hover:text-amber-800"
+                aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+              >
+                {isPasswordVisible ? <EyeOffIcon className="w-6 h-6"/> : <EyeIcon className="w-6 h-6"/>}
+              </button>
             </div>
             <div>
               <button

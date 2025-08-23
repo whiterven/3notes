@@ -19,3 +19,8 @@ export interface ToastMessage {
   message: string;
   type: ToastType;
 }
+
+export interface UserProfile {
+  name: string;
+  avatar: string;
+}

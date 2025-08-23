@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import type { Note, ToastMessage, ToastType } from './types';
+import type { Note, ToastMessage, ToastType, UserProfile } from './types';
 import { AddNoteForm } from './components/AddNoteForm';
 import { NoteCard } from './components/NoteCard';
 import { Toast } from './components/Toast';
@@ -7,13 +7,15 @@ import { AiChatAssistant } from './components/AiChatAssistant';
 import { EnvironmentSelector } from './components/EnvironmentSelector';
 import type { Environment } from './components/EnvironmentSelector';
 import { summarizeText, transcribeAudio, extractTasks, findRelatedNotes, expandNoteText } from './services/geminiService';
-import { PlusIcon, ProfileIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon, TrendingUpIcon, ImportIcon } from './components/icons';
+import { PlusIcon, ProfileIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon, TrendingUpIcon } from './components/icons';
 import { InsightsModal } from './components/InsightsModal';
 import { StackViewModal } from './components/StackViewModal';
 import { ViewNoteModal } from './components/ViewNoteModal';
+import { ProfileModal } from './components/ProfileModal';
 
 const LOCAL_STORAGE_KEY = 'ai-3d-notes';
 const ENV_STORAGE_KEY = 'ai-3d-notes-env';
+const USER_PROFILE_STORAGE_KEY = 'ai-3d-notes-user-profile';
 const NOTE_COLORS = ['bg-amber-100', 'bg-sky-100', 'bg-lime-100', 'bg-rose-100', 'bg-violet-100', 'bg-white'];
 
 
@@ -53,8 +55,21 @@ const getInitialEnv = (): Environment => {
     return 'default';
 };
 
+const getInitialProfile = (): UserProfile => {
+    try {
+        const savedProfile = window.localStorage.getItem(USER_PROFILE_STORAGE_KEY);
+        if (savedProfile) {
+            return JSON.parse(savedProfile);
+        }
+    } catch (error) {
+        console.error("Could not load user profile from local storage", error);
+    }
+    return { name: 'Explorer', avatar: 'avatar1' };
+};
+
 const App: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>(getInitialNotes);
+  const [userProfile, setUserProfile] = useState<UserProfile>(getInitialProfile);
   const [isLoadingSummary, setIsLoadingSummary] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState<string | null>(null);
   const [isExtractingTasks, setIsExtractingTasks] = useState<string | null>(null);
@@ -63,6 +78,7 @@ const App: React.FC = () => {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [isInsightsVisible, setIsInsightsVisible] = useState(false);
+  const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -90,6 +106,15 @@ const App: React.FC = () => {
         console.error("Could not save environment to local storage", error);
     }
   }, [environment]);
+
+  useEffect(() => {
+    try {
+        window.localStorage.setItem(USER_PROFILE_STORAGE_KEY, JSON.stringify(userProfile));
+    } catch (error) {
+        console.error("Could not save user profile to local storage", error);
+    }
+  }, [userProfile]);
+
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -385,7 +410,7 @@ const App: React.FC = () => {
                 }
 
                 showToast(`${uniqueNewNotes.length} notes imported successfully!`, "success");
-                return [...prev, ...uniqueNewNotes];
+                return [...uniqueNewNotes, ...prev];
             });
 
         } catch (error) {
@@ -401,6 +426,40 @@ const App: React.FC = () => {
     reader.readAsText(file);
   };
   
+  const handleExport = () => {
+    if (notes.length === 0) {
+      showToast("There are no notes to export.");
+      return;
+    }
+    try {
+        const dataStr = JSON.stringify(notes, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `stickon-ai-notes-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast("Notes exported successfully!", "success");
+    } catch (error) {
+        showToast("Failed to export notes.");
+    }
+  };
+
+  const handleDeleteAllNotes = () => {
+    if(window.confirm("Are you sure you want to delete ALL notes? This action cannot be undone.")) {
+        setNotes([]);
+        showToast("All notes have been deleted.", "success");
+    }
+  };
+
+  const handleProfileUpdate = (newProfile: UserProfile) => {
+    setUserProfile(newProfile);
+    showToast("Profile updated successfully!", "success");
+  };
+
   const handleStartStack = (id: string) => {
     setStackingNoteId(current => (current === id ? null : id));
   };
@@ -460,7 +519,7 @@ const App: React.FC = () => {
       <header className="p-2 sm:p-3 flex justify-between items-center sticky top-0 z-30 border-b themed-header transition-colors duration-500">
         <div>
           <h1 className="text-xl sm:text-3xl font-bold text-amber-800">Stickon AI</h1>
-          <p className="text-sm sm:text-lg text-amber-600">Capture your ideas in a new dimension.</p>
+          <p className="text-sm sm:text-lg text-amber-600">Welcome, {userProfile.name}!</p>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
            <button onClick={() => setIsInsightsVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button-violet" title="Get AI Insights">
@@ -471,10 +530,7 @@ const App: React.FC = () => {
           </button>
           <EnvironmentSelector currentEnv={environment} onSelect={setEnvironment} />
            <input type="file" ref={importInputRef} onChange={handleImport} accept=".json" className="hidden" />
-          <button onClick={handleImportClick} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Import Notes from JSON">
-            <ImportIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Import</span>
-          </button>
-          <button onClick={() => showToast("Profile feature coming soon!", "success")} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Profile (coming soon)">
+          <button onClick={() => setIsProfileVisible(true)} className="flex items-center text-sm sm:text-base p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Profile & Settings">
             <ProfileIcon className="w-5 h-5" /> <span className="hidden sm:inline ml-1.5">Profile</span>
           </button>
           <button onClick={handleAddNewNote} className="flex items-center gap-1.5 text-sm sm:text-base bg-amber-700 text-white p-2 sm:px-3 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
@@ -638,6 +694,18 @@ const App: React.FC = () => {
           />
       )}
       
+      {isProfileVisible && (
+          <ProfileModal
+            notes={notes}
+            userProfile={userProfile}
+            onClose={() => setIsProfileVisible(false)}
+            onProfileUpdate={handleProfileUpdate}
+            onImportClick={handleImportClick}
+            onExport={handleExport}
+            onDeleteAll={handleDeleteAllNotes}
+          />
+      )}
+
       {viewingStack && (
         <StackViewModal
           parentNote={viewingStack}

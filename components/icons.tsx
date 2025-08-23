@@ -194,3 +194,79 @@ export const ProfileIcon: React.FC<IconProps> = ({ className }) => (
         <circle cx="12" cy="7" r="4"/>
     </svg>
 );
+
+export const FileTextIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+        <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+        <path d="M16 13H8"/>
+        <path d="M16 17H8"/>
+        <path d="M10 9H8"/>
+    </svg>
+);
+
+export const AlertTriangleIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+        <path d="M12 9v4"/>
+        <path d="M12 17h.01"/>
+    </svg>
+);
+
+// Simplified Avatar Icons
+export const Avatar1Icon: React.FC<IconProps> = ({ className }) => (
+    <svg viewBox="0 0 36 36" fill="none" role="img" xmlns="http://www.w3.org/2000/svg" width="80" height="80" className={className}>
+        <mask id="mask__beam" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36"><rect width="36" height="36" rx="72" fill="#FFFFFF"></rect></mask>
+        <g mask="url(#mask__beam)">
+            <rect width="36" height="36" fill="#fde68a"></rect>
+            <rect x="0" y="0" width="36" height="36" transform="translate(4 4) rotate(262 18 18) scale(1.2)" fill="#92400e" rx="36"></rect>
+            <g transform="translate(2 -2) rotate(2 18 18)">
+                <path d="M13,21 a1,0.75 0 0,0 10,0" fill="#000000"></path>
+                <rect x="12" y="14" width="3.5" height="3.5" rx="2" fill="#000000"></rect>
+                <rect x="20" y="14" width="3.5" height="3.5" rx="2" fill="#000000"></rect>
+            </g>
+        </g>
+    </svg>
+);
+export const Avatar2Icon: React.FC<IconProps> = ({ className }) => (
+    <svg viewBox="0 0 36 36" fill="none" role="img" xmlns="http://www.w3.org/2000/svg" width="80" height="80" className={className}>
+        <mask id="mask__beam" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36"><rect width="36" height="36" rx="72" fill="#FFFFFF"></rect></mask>
+        <g mask="url(#mask__beam)">
+            <rect width="36" height="36" fill="#c4b5fd"></rect>
+            <rect x="0" y="0" width="36" height="36" transform="translate(-4 6) rotate(16 18 18) scale(1.2)" fill="#5b21b6" rx="36"></rect>
+            <g transform="translate(-2 3) rotate(-2 18 18)">
+                <path d="M15,20 a1,1 0 0,0 6,0" fill="#FFFFFF"></path>
+                <rect x="14" y="13" width="3.5" height="3.5" rx="2" fill="#FFFFFF"></rect>
+                <rect x="20" y="13" width="3.5" height="3.5" rx="2" fill="#FFFFFF"></rect>
+            </g>
+        </g>
+    </svg>
+);
+export const Avatar3Icon: React.FC<IconProps> = ({ className }) => (
+    <svg viewBox="0 0 36 36" fill="none" role="img" xmlns="http://www.w3.org/2000/svg" width="80" height="80" className={className}>
+        <mask id="mask__beam" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36"><rect width="36" height="36" rx="72" fill="#FFFFFF"></rect></mask>
+        <g mask="url(#mask__beam)">
+            <rect width="36" height="36" fill="#a7f3d0"></rect>
+            <rect x="0" y="0" width="36" height="36" transform="translate(6 6) rotate(226 18 18) scale(1.1)" fill="#065f46" rx="6"></rect>
+            <g transform="translate(0 1) rotate(6 18 18)">
+                <path d="M14,20 a1,1 0 0,1 8,0" fill="#000000"></path>
+                <rect x="13" y="14" width="3.5" height="3.5" rx="2" fill="#000000"></rect>
+                <rect x="20" y="14" width="3.5" height="3.5" rx="2" fill="#000000"></rect>
+            </g>
+        </g>
+    </svg>
+);
+export const Avatar4Icon: React.FC<IconProps> = ({ className }) => (
+    <svg viewBox="0 0 36 36" fill="none" role="img" xmlns="http://www.w3.org/2000/svg" width="80" height="80" className={className}>
+        <mask id="mask__beam" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36"><rect width="36" height="36" rx="72" fill="#FFFFFF"></rect></mask>
+        <g mask="url(#mask__beam)">
+            <rect width="36" height="36" fill="#fca5a5"></rect>
+            <rect x="0" y="0" width="36" height="36" transform="translate(0 0) rotate(328 18 18) scale(1)" fill="#991b1b" rx="36"></rect>
+            <g transform="translate(0 4) rotate(-8 18 18)">
+                <path d="M15,19 a1,1 0 0,0 6,0" fill="#FFFFFF"></path>
+                <rect x="14" y="14" width="3.5" height="3.5" rx="2" fill="#FFFFFF"></rect>
+                <rect x="20" y="14" width="3.5" height="3.5" rx="2" fill="#FFFFFF"></rect>
+            </g>
+        </g>
+    </svg>
+);

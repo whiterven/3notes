@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { Note, ToastMessage, ToastType, UserProfile } from './types';
 import { AddNoteForm } from './components/AddNoteForm';
@@ -11,7 +7,7 @@ import { AiChatAssistant } from './components/AiChatAssistant';
 import { EnvironmentSelector } from './components/EnvironmentSelector';
 import type { Environment } from './components/EnvironmentSelector';
 import { summarizeText, transcribeAudio, extractTasks, findRelatedNotes, expandNoteText } from './services/geminiService';
-import { PlusIcon, ProfileIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon, TrendingUpIcon, LayoutGridIcon, CarouselIcon } from './components/icons';
+import { PlusIcon, ProfileIcon, SearchIcon, TagIcon, ChevronLeftIcon, ChevronRightIcon, BrainCircuitIcon, CloseIcon, TrendingUpIcon, LayoutGridIcon, CarouselIcon, MicIcon } from './components/icons';
 import { InsightsModal } from './components/InsightsModal';
 import { StackViewModal } from './components/StackViewModal';
 import { ViewNoteModal } from './components/ViewNoteModal';
@@ -20,6 +16,7 @@ import { supabase } from './services/supabaseClient';
 import { Auth } from './components/Auth';
 import type { Session } from '@supabase/supabase-js';
 import { InfiniteCanvas } from './components/InfiniteCanvas';
+import { VoiceAssistantModal } from './components/VoiceAssistantModal';
 
 const ENV_STORAGE_KEY = 'ai-3d-notes-env';
 const NOTE_COLORS = ['bg-amber-100', 'bg-sky-100', 'bg-lime-100', 'bg-rose-100', 'bg-violet-100', 'bg-white'];
@@ -49,6 +46,7 @@ const App: React.FC = () => {
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [isInsightsVisible, setIsInsightsVisible] = useState(false);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
+  const [isVoiceAssistantVisible, setIsVoiceAssistantVisible] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -254,6 +252,7 @@ const App: React.FC = () => {
         setNotes(prevNotes => [data, ...prevNotes]);
         showToast("AI created a new note for you!", "success");
     }
+    setIsVoiceAssistantVisible(false); // Ensure modal closes
   };
   
   const handleAiUpdateNote = async (updateData: { id: string; text?: string; tags?: string[]; color?: string }) => {
@@ -733,6 +732,9 @@ const App: React.FC = () => {
           <button onClick={() => setIsProfileVisible(true)} className="flex items-center text-sm p-1 sm:p-1.5 sm:px-2.5 rounded-full transition-colors duration-300 themed-button" title="Profile & Settings">
             <ProfileIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline ml-1.5">Profile</span>
           </button>
+          <button onClick={() => setIsVoiceAssistantVisible(true)} className="flex items-center gap-1.5 text-sm bg-amber-600 text-white p-1.5 sm:p-2 sm:px-3 rounded-full hover:bg-amber-700 transition-transform duration-300 transform hover:scale-105 shadow-lg themed-button-violet" aria-label="Create note with voice">
+            <MicIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">Voice Note</span>
+          </button>
           <button onClick={handleAddNewNote} className="flex items-center gap-1.5 text-sm bg-amber-700 text-white p-1.5 sm:p-2 sm:px-3 rounded-full hover:bg-amber-800 transition-transform duration-300 transform hover:scale-105 shadow-lg" aria-label="Create new note">
             <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" /> <span className="hidden sm:inline">New Note</span>
           </button>
@@ -889,6 +891,14 @@ const App: React.FC = () => {
           onSave={handleSaveNote}
           onClose={() => { setIsFormVisible(false); setEditingNote(null); }}
           noteToEdit={editingNote}
+          showToast={showToast}
+        />
+      )}
+
+      {isVoiceAssistantVisible && (
+        <VoiceAssistantModal
+          onClose={() => setIsVoiceAssistantVisible(false)}
+          onNoteCreate={handleAiCreateNote}
           showToast={showToast}
         />
       )}

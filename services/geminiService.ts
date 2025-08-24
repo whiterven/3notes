@@ -437,3 +437,36 @@ export async function queryNotes(query: string, allNotes: Note[], useWebSearch: 
         throw new Error("Failed to get a response from the AI assistant.");
     }
 }
+
+export async function extractTagsFromTranscript(transcript: string): Promise<string[]> {
+    if (!transcript) return [];
+    try {
+        const aiClient = getAiClient();
+        const response = await aiClient.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `From the following voice memo, extract only the tags. A tag is usually preceded by a phrase like "tag it as", "add the tag", or "tag it". If no tags are explicitly mentioned, return an empty array. Transcript: "${transcript}"`,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        tags: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.STRING,
+                                description: "A tag mentioned in the transcript."
+                            }
+                        }
+                    },
+                    required: ["tags"]
+                }
+            }
+        });
+        const result = JSON.parse(response.text);
+        return result.tags || [];
+    } catch (error) {
+        console.error("Error extracting tags from transcript:", error);
+        // Fail gracefully, so note can still be created without tags.
+        return [];
+    }
+}

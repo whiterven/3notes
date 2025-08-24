@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { Note, ToastMessage, ToastType } from '../types';
 import type { Content } from '@google/genai';
 import { queryNotes } from '../services/geminiService';
-import { CloseIcon, BrainCircuitIcon, LoaderIcon, MicIcon, GlobeIcon, SendIcon } from './icons';
+import { CloseIcon, BrainCircuitIcon, MicIcon, GlobeIcon, SendIcon, BotMessageIcon } from './icons';
 
 interface AiChatAssistantProps {
     notes: Note[];
@@ -175,7 +175,7 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                 <div className="flex-grow p-4 overflow-y-auto space-y-6 thin-scrollbar">
                     {messages.map((msg, index) => (
                         <div key={index} className={`flex gap-3 text-base sm:text-lg ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            {msg.role === 'ai' && <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><BrainCircuitIcon className="w-6 h-6 text-violet-700" /></div>}
+                            {msg.role === 'ai' && <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><BotMessageIcon className="w-6 h-6 text-violet-700" /></div>}
                             <div className={`max-w-xl px-3 sm:px-4 py-2 rounded-xl ${msg.role === 'user' ? 'bg-amber-200 text-amber-900 rounded-br-none' : 'bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200'}`}>
                                 {msg.role === 'user' ? (
                                     <p style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</p>
@@ -201,9 +201,13 @@ export const AiChatAssistant: React.FC<AiChatAssistantProps> = ({ notes, onClose
                     ))}
                     {isLoading && (
                          <div className="flex gap-3 text-base sm:text-lg justify-start">
-                             <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><LoaderIcon className="w-6 h-6 text-violet-700 animate-spin" /></div>
+                             <div className="w-10 h-10 rounded-full bg-violet-200 flex items-center justify-center flex-shrink-0 mt-1"><BotMessageIcon className="w-6 h-6 text-violet-700 animate-pulse" /></div>
                              <div className="max-w-xl px-3 sm:px-4 py-2 rounded-xl bg-white text-amber-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200">
-                                 <p className="italic">Thinking...</p>
+                                 <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                                </div>
                              </div>
                          </div>
                     )}
